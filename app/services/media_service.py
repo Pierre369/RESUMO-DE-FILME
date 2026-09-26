@@ -60,6 +60,35 @@ class MediaService:
             return {}
 
     @staticmethod
+    def get_best_audio_stream_map(file_path: str) -> str:
+        """
+        Retorna o seletor de áudio FFmpeg (ex: '0:a:0' ou '0:a:1') priorizando dublagem PT-BR.
+        """
+        if not os.path.exists(file_path):
+            return "0:a:0"
+        cmd = [
+            "ffprobe", "-v", "error",
+            "-show_entries", "stream=index,codec_type:stream_tags=language,title",
+            "-of", "json", file_path
+        ]
+        try:
+            res = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            data = json.loads(res.stdout)
+            audio_streams = [s for s in data.get("streams", []) if s.get("codec_type") == "audio"]
+            if not audio_streams:
+                return "0:a:0"
+            
+            for idx, s in enumerate(audio_streams):
+                tags = s.get("tags", {})
+                lang = tags.get("language", "").lower()
+                title = tags.get("title", "").lower()
+                if "por" in lang or "pt" in lang or "dublado" in title or "pt-br" in title:
+                    return f"0:a:{idx}"
+            return "0:a:0"
+        except Exception:
+            return "0:a:0"
+
+    @staticmethod
     def list_movies() -> List[Dict[str, Any]]:
         """Lista todos os filmes disponíveis na pasta FILME/."""
         movies = []

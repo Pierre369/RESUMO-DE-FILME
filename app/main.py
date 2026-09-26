@@ -67,6 +67,7 @@ class RenderRequest(BaseModel):
     movie_path: str
     movie_title: str
     character: str
+    scene_id: Optional[str] = None
     scene_name: str
     style_id: str
     style_name: str
@@ -329,6 +330,9 @@ async def smart_auto_generate(req: SmartAutoRequest, bg_tasks: BackgroundTasks):
         movie_path=req.movie_path,
         aspect_ratio=req.aspect_ratio,
         narrator_voice=f"{main_char['name']}",
+        scene_id=top_scene.get("id"),
+        scene_name=top_scene.get("title"),
+        screenplay_text=screenplay.get("screenplay_text"),
         output_filename=output_filename,
         project_id=project["id"]
     )
@@ -372,6 +376,9 @@ async def start_render(req: RenderRequest, bg_tasks: BackgroundTasks):
         movie_path=req.movie_path,
         aspect_ratio=req.aspect_ratio,
         narrator_voice=req.narrator_voice,
+        scene_id=req.scene_id,
+        scene_name=req.scene_name,
+        screenplay_text=req.screenplay_text,
         output_filename=output_filename,
         project_id=project["id"]
     )

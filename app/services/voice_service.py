@@ -108,19 +108,31 @@ class VoiceService:
                 start_ts, dur = "01:29:05", "12"
         elif "palmer" in movie_lower:
             if "palmer" in char_lower or "eddie" in char_lower:
-                start_ts, dur = "01:13:32", "12"  # 4412s cena onde Palmer fala limpo com Sam
+                start_ts, dur = "01:13:32", "12"
             elif "sam" in char_lower:
                 start_ts, dur = "01:13:58", "10"
             else:
                 start_ts, dur = "01:13:32", "12"
+        elif "wick" in movie_lower or "john" in movie_lower:
+            if "iosef" in char_lower:
+                start_ts, dur = "00:08:50", "10"
+            elif "viggo" in char_lower:
+                start_ts, dur = "00:25:20", "12"
+            else:
+                start_ts, dur = "00:31:30", "12"
+        elif "aranha" in movie_lower or "spider" in movie_lower:
+            start_ts, dur = "00:15:00", "12"
         else:
-            start_ts, dur = "00:05:00", "12"
+            start_ts, dur = "00:10:00", "12"
+
+        from app.services.media_service import MediaService
+        audio_map = MediaService.get_best_audio_stream_map(movie_path)
 
         import subprocess
         cmd = [
             "ffmpeg", "-y", "-ss", start_ts, "-t", dur,
             "-i", movie_path,
-            "-map", "0:a:0",
+            "-map", audio_map,
             "-ac", "1", "-ar", "44100",
             "-c:a", "pcm_s16le",
             sample_path

@@ -702,10 +702,23 @@ document.addEventListener("DOMContentLoaded", () => {
       if (idx === 0) selectedScene = s;
       card.querySelector("input").addEventListener("change", () => {
         selectedScene = s;
+        // Atualiza a visualização do card ativo
+        document.querySelectorAll("#impact-scenes-list label").forEach(lbl => {
+          lbl.classList.remove("border-white", "bg-matte-850");
+          lbl.classList.add("border-matte-800");
+        });
+        card.classList.add("border-white", "bg-matte-850");
+        card.classList.remove("border-matte-800");
+        // Gera automaticamente o roteiro específico para essa cena escolhida
+        btnGenerateScreenplayGuided.click();
       });
       impactScenesList.appendChild(card);
     });
     if (window.lucide) lucide.createIcons();
+    // Gera o roteiro inicial para a primeira cena recomendada
+    if (scenes.length > 0) {
+      btnGenerateScreenplayGuided.click();
+    }
   }
 
   // Generate Screenplay in Guided Mode
@@ -715,7 +728,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const movieTitle = creatorMovieSelect.selectedOptions[0]?.dataset.filename || "Palmer";
     const customDesc = customSceneInput.value.trim();
-    const sceneDesc = customDesc || selectedScene?.summary || "Confronto no bar em defesa de Sam";
+    const sceneDesc = customDesc || selectedScene?.summary || selectedScene?.title || "Confronto de alto impacto";
     const styleId = creatorStyleSelect.value;
     const aspect = document.querySelector('input[name="creator-aspect-ratio"]:checked').value;
 
@@ -725,7 +738,7 @@ document.addEventListener("DOMContentLoaded", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           movie_title: movieTitle,
-          character: selectedCharacter || "Eddie Palmer",
+          character: selectedCharacter || "Protagonista",
           scene_description: sceneDesc,
           aspect_ratio: aspect,
           target_duration: 90,
@@ -757,7 +770,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const aspect = document.querySelector('input[name="creator-aspect-ratio"]:checked').value;
     const styleId = creatorStyleSelect.value;
     const styleName = creatorStyleSelect.selectedOptions[0]?.innerText.split(" (")[0] || "Confronto & Vingança";
-    const sceneName = customSceneInput.value.trim() ? "Cena Personalizada" : (selectedScene?.title || "Confronto no Bar");
+    const sceneName = customSceneInput.value.trim() ? "Cena Personalizada" : (selectedScene?.title || "Confronto de Impacto");
+    const sceneId = selectedScene?.id || "custom_scene";
 
     btnRenderGuidedProject.disabled = true;
     btnRenderGuidedProject.innerHTML = `<span class="animate-spin mr-1">⏳</span> Disparando renderizador...`;
@@ -769,12 +783,13 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({
           movie_path: moviePath,
           movie_title: movieTitle,
-          character: selectedCharacter || "Eddie Palmer",
+          character: selectedCharacter || "Protagonista",
+          scene_id: sceneId,
           scene_name: sceneName,
           style_id: styleId,
           style_name: styleName,
           aspect_ratio: aspect,
-          narrator_voice: `${selectedCharacter || 'Eddie Palmer'} (Clonada)`,
+          narrator_voice: `${selectedCharacter || 'Protagonista'} (Clonada)`,
           screenplay_text: creatorScriptText.value,
           mode: "Diretor Guiado"
         })
