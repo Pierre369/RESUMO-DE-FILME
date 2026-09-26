@@ -461,6 +461,13 @@ document.addEventListener("DOMContentLoaded", () => {
         opt.innerText = `${s.name} (${s.category} - Retenção: ${s.retention_score})`;
         creatorStyleSelect.appendChild(opt);
       });
+
+      // Auto update if movie changes while guided flow is visible
+      creatorMovieSelect.onchange = () => {
+        if (!guidedFlowContainer.classList.contains("hidden")) {
+          btnTriggerGuidedMode.click();
+        }
+      };
     } catch (e) {
       console.error(e);
     }

@@ -1,5 +1,23 @@
 [
   {
+    "id": "proj_dec4fb0c",
+    "title": "O Menu: O Golpe do X-Burguer (A Fuga Genial)",
+    "movie_title": "O Menu 2022 1080p WEB-DL DUAL 5.1.mkv",
+    "character": "Margot Mills (Erin)",
+    "scene_name": "O Golpe do X-Burguer (A Fuga Genial)",
+    "style_id": "confronto_vinganca",
+    "style_name": "Confronto & Vingança",
+    "aspect_ratio": "1:1",
+    "duration_sec": 89.7,
+    "cuts_count": 8,
+    "status": "completed",
+    "output_filename": "cineshort_auto_78dd2de3_1x1.mp4",
+    "output_url": "/static/output/cineshort_auto_78dd2de3_1x1.mp4",
+    "thumbnail_url": "/static/thumbs/thumb_61769.jpg",
+    "created_at": "26/09/2026 17:35",
+    "mode": "Inteligente (Automático)"
+  },
+  {
     "id": "proj_palmer_master",
     "title": "Palmer: O Acerto de Contas no Bar",
     "movie_title": "Palmer (2021) Dublado.mp4",
@@ -18,21 +36,21 @@
     "mode": "Diretor Guiado"
   },
   {
-    "id": "proj_8ce1ac2e",
-    "title": "Palmer (2021) Dublado: A Vingança no Bar (Confronto Físico)",
-    "movie_title": "Palmer (2021) Dublado.mp4",
-    "character": "Eddie Palmer",
-    "scene_name": "A Vingança no Bar (Confronto Físico)",
+    "id": "proj_ead851fb",
+    "title": "O Menu 2022 1080p WEB-DL DUAL 5.1: O Golpe do X-Burguer (A Fuga Genial)",
+    "movie_title": "O Menu 2022 1080p WEB-DL DUAL 5.1.mkv",
+    "character": "Margot Mills (Erin)",
+    "scene_name": "O Golpe do X-Burguer (A Fuga Genial)",
     "style_id": "confronto_vinganca",
     "style_name": "Confronto & Vingança",
     "aspect_ratio": "1:1",
     "duration_sec": 90.0,
     "cuts_count": 18,
     "status": "completed",
-    "output_filename": "cineshort_auto_622968f2_1x1.mp4",
-    "output_url": "/static/output/cineshort_auto_622968f2_1x1.mp4",
-    "thumbnail_url": "/static/thumbs/thumb_24195.jpg",
-    "created_at": "26/09/2026 17:03",
+    "output_filename": "cineshort_auto_26e4309a_1x1.mp4",
+    "output_url": "/static/output/cineshort_auto_26e4309a_1x1.mp4",
+    "thumbnail_url": "/static/thumbs/thumb_61769.jpg",
+    "created_at": "26/09/2026 17:37",
     "mode": "Inteligente (Automático)"
   }
 ]

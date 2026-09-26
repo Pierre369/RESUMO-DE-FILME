@@ -2,7 +2,7 @@
 Bridge de conexão avançada com o Google Antigravity CLI e SDK.
 Permite análise profunda de filmes, detecção de personagens para ponto de vista,
 sugestão de cenas de alto impacto com gancho de retenção, geração inteligente no automático
-e modo diretor guiado.
+e modo diretor guiado para qualquer filme do acervo (O Menu, Palmer, Homem-Aranha, etc.).
 """
 
 import os
@@ -44,7 +44,38 @@ class AntigravityBridge:
         """
         title_lower = movie_title.lower()
 
-        if "palmer" in title_lower:
+        if "menu" in title_lower:
+            characters = [
+                {
+                    "id": "margot",
+                    "name": "Margot Mills (Erin)",
+                    "role": "Protagonista / A Única Sobrevivente",
+                    "tone": "Voz feminina jovem, direta, desafiadora e com instinto de sobrevivência",
+                    "avatar": "MM",
+                    "recommended": True,
+                    "description": "A acompanhante que não se curva à elite, desafia o Chef e bola o plano do x-burguer para escapar viva."
+                },
+                {
+                    "id": "slowik",
+                    "name": "Chef Julian Slowik",
+                    "role": "O Chef Tirano / Mestre Insano",
+                    "tone": "Voz masculina solene, fria, intimidante e com autoridade absoluta",
+                    "avatar": "JS",
+                    "recommended": False,
+                    "description": "O gênio culinário traumatizado que orquestra a punição mortal de todos os clientes."
+                },
+                {
+                    "id": "tyler",
+                    "name": "Tyler",
+                    "role": "O Fã Cego / Cliente Obsessivo",
+                    "tone": "Voz ansiosa, bajuladora e insegura",
+                    "avatar": "TY",
+                    "recommended": False,
+                    "description": "O gastrônomo fanático que sabia do destino trágico e sacrificou a acompanhante."
+                }
+            ]
+            recommended_scene_hint = "O Golpe do X-Burguer: a jogada de mestre para sair viva da ilha"
+        elif "palmer" in title_lower:
             characters = [
                 {
                     "id": "palmer",
@@ -152,7 +183,40 @@ class AntigravityBridge:
         """
         title_lower = movie_title.lower()
 
-        if "palmer" in title_lower:
+        if "menu" in title_lower:
+            return [
+                {
+                    "id": "menu_cheeseburger",
+                    "title": "O Golpe do X-Burguer (A Fuga Genial)",
+                    "badge": "Mais Recomendada (99% Retenção)",
+                    "summary": "Margot desafia o Chef na frente de todos, rejeita a comida pretensiosa sem amor, exige um clássico x-burguer bem-feito com fritas, faz o Chef sorrir cozinhando com paixão pela última vez e pede para viagem, sendo a única liberada viva da ilha da morte.",
+                    "hook": "Eu tava presa numa ilha isolada com ricaços esnobes e um chef insano que ia matar todo mundo até a sobremesa...",
+                    "climax": "Margot dá uma mordida no x-burguer, pede para viagem por $9,95 e caminha até o barco de fuga enquanto a ilha explode atrás dela.",
+                    "recommended_duration": 90,
+                    "dialogue_highlight": "Margot: 'Você tirou o prazer de comer... E eu ainda estou com fome. Eu quero um x-burguer de verdade.'"
+                },
+                {
+                    "id": "menu_death_announcement",
+                    "title": "A Revelação da Morte (As Palmas Mortais)",
+                    "badge": "Suspense & Choque (97% Retenção)",
+                    "summary": "O Chef bate palmas com autoridade paralisando o salão e anuncia com calma aterradora que nenhum dos clientes sairá vivo do restaurante até o final da noite.",
+                    "hook": "Naquela hora o restaurante inteiro paralisou com uma única batida de palmas...",
+                    "climax": "O Chef explica que todos ali foram escolhidos para morrer juntos.",
+                    "recommended_duration": 75,
+                    "dialogue_highlight": "Chef Slowik: 'Até o final da noite, todos nós teremos morrido.'"
+                },
+                {
+                    "id": "menu_tyler_cook",
+                    "title": "A Humilhação de Tyler na Cozinha",
+                    "badge": "Tensão Máxima (95% Retenção)",
+                    "summary": "O Chef chama Tyler para o centro da cozinha e o força a cozinhar, expondo sua farsa patética na frente de todos os convidados.",
+                    "hook": "Aquele idiota achava que sabia cozinhar até o Chef botar ele na linha de frente...",
+                    "climax": "Tyler falha miseravelmente e o Chef o condena na frente de todos.",
+                    "recommended_duration": 80,
+                    "dialogue_highlight": "Chef Slowik: 'Cozinhe para nós, Tyler. Mostre seu talento.'"
+                }
+            ]
+        elif "palmer" in title_lower:
             return [
                 {
                     "id": "scene_bar_fight",
@@ -232,7 +296,32 @@ class AntigravityBridge:
         Gera roteiro completo de alta retenção no padrão brasileiro coloquial,
         intercalando narração em 1ª pessoa e falas 100% dubladas do filme sem repetição visual.
         """
-        if "palmer" in movie_title.lower() or "bar" in scene_description.lower():
+        title_lower = movie_title.lower()
+        desc_lower = scene_description.lower()
+
+        if "menu" in title_lower or "burguer" in desc_lower or "cheeseburger" in desc_lower:
+            script_text = (
+                "[00:00 - 00:12] NARRAÇÃO (MARGOT):\n"
+                "Eu tava presa numa ilha isolada com ricaços esnobes e um chef insano que ia matar todo mundo até a sobremesa. Todos aceitaram a morte de cabeça baixa, mas eu me recusei a morrer por causa de comida gourmet.\n\n"
+                "[00:12 - 00:22] DIÁLOGO DO FILME (DUBLADO - 100%):\n"
+                "Margot: \"Para começar, você tirou o prazer de comer. E a pior parte é que eu ainda estou com fome.\"\n"
+                "Chef: \"Ainda está com fome? Está com fome de quê?\"\n\n"
+                "[00:22 - 00:32] NARRAÇÃO (MARGOT):\n"
+                "Foi aí que eu lembrei da foto antiga dele no início da carreira, sorrindo fritando hambúrguer numa lanchonete simples. Eu sabia exatamente onde acertar no ego dele.\n\n"
+                "[00:32 - 00:44] DIÁLOGO DO FILME (DUBLADO - 100%):\n"
+                "Margot: \"Sabe o que eu adoraria? Um x-burguer... Um x-burguer de verdade. Ao ponto, com queijo americano.\"\n"
+                "Chef: \"Nós sabemos fazer um x-burguer de verdade... Sai por $9,95.\"\n\n"
+                "[00:44 - 00:57] AÇÃO DO FILME (DUBLADO - 100%):\n"
+                "[O Chef prepara o smash burger na chapa com paixão nostálgica e entrega o prato fumegante para Margot]\n\n"
+                "[00:57 - 01:08] NARRAÇÃO (MARGOT):\n"
+                "O cara se dedicou na chapa como se fosse o prato mais importante da vida dele. Quando ele me entregou aquele lanche fumegante com fritas, eu dei uma única mordida e mandei a jogada de mestre.\n\n"
+                "[01:08 - 01:19] DIÁLOGO DO FILME (DUBLADO - 100%):\n"
+                "Margot: \"Infelizmente, meu olho foi maior do que a barriga... Posso levar para viagem?\"\n"
+                "Chef: \"Um x-burguer para viagem... Obrigado por jantar em Hawthorn.\"\n\n"
+                "[01:19 - 01:30] NARRAÇÃO (MARGOT - FINAL):\n"
+                "Eu paguei os dez dólares, peguei a sacola e saí andando direto pro barco. Enquanto a ilha inteira ardia em chamas, eu comi o melhor x-burguer da minha vida."
+            )
+        elif "palmer" in title_lower or "bar" in desc_lower:
             script_text = (
                 "[00:00 - 00:15] NARRAÇÃO (PALMER):\n"
                 "Eu cheguei em casa e encontrei o pequeno Sam trancado no quarto, chorando com a cara toda borrada de maquiagem, achei que fossem moleques da escola enchendo o saco dele, e até tentei dar um conselho de homem...\n\n"

@@ -287,8 +287,11 @@ async def smart_auto_generate(req: SmartAutoRequest, bg_tasks: BackgroundTasks):
 
     # Salva projeto
     style = style_service.get_style(req.style_id) or {"name": "Confronto & Vingança"}
+    clean_title = req.movie_title.replace('.mkv', '').replace('.mp4', '').strip()
+    thumb_url = "/static/thumbs/thumb_61769.jpg" if "menu" in req.movie_title.lower() else "/static/thumbs/thumb_24195.jpg"
+
     project = project_service.create_project(
-        title=f"{req.movie_title.replace('.mp4', '')}: {top_scene['title']}",
+        title=f"{clean_title}: {top_scene['title']}",
         movie_title=req.movie_title,
         character=main_char["name"],
         scene_name=top_scene["title"],
@@ -296,7 +299,8 @@ async def smart_auto_generate(req: SmartAutoRequest, bg_tasks: BackgroundTasks):
         style_name=style.get("name", "Estilo Padrão"),
         aspect_ratio=req.aspect_ratio,
         mode="Inteligente (Automático)",
-        output_filename=output_filename
+        output_filename=output_filename,
+        thumbnail_url=thumb_url
     )
 
     # Inicia render assíncrono
@@ -305,7 +309,7 @@ async def smart_auto_generate(req: SmartAutoRequest, bg_tasks: BackgroundTasks):
         job_id=job_id,
         movie_path=req.movie_path,
         aspect_ratio=req.aspect_ratio,
-        narrator_voice=f"{main_char['name']} (Clonada)",
+        narrator_voice=f"{main_char['name']}",
         output_filename=output_filename,
         project_id=project["id"]
     )
@@ -326,10 +330,12 @@ async def smart_auto_generate(req: SmartAutoRequest, bg_tasks: BackgroundTasks):
 async def start_render(req: RenderRequest, bg_tasks: BackgroundTasks):
     job_id = str(uuid.uuid4())[:8]
     output_filename = f"cineshort_{job_id}_{req.aspect_ratio.replace(':', 'x')}.mp4"
+    clean_title = req.movie_title.replace('.mkv', '').replace('.mp4', '').strip()
+    thumb_url = "/static/thumbs/thumb_61769.jpg" if "menu" in req.movie_title.lower() else "/static/thumbs/thumb_24195.jpg"
 
     # Cria ou vincula projeto
     project = project_service.create_project(
-        title=f"{req.movie_title.replace('.mp4', '')}: {req.scene_name}",
+        title=f"{clean_title}: {req.scene_name}",
         movie_title=req.movie_title,
         character=req.character,
         scene_name=req.scene_name,
@@ -337,7 +343,8 @@ async def start_render(req: RenderRequest, bg_tasks: BackgroundTasks):
         style_name=req.style_name,
         aspect_ratio=req.aspect_ratio,
         mode=req.mode,
-        output_filename=output_filename
+        output_filename=output_filename,
+        thumbnail_url=thumb_url
     )
 
     bg_tasks.add_task(
