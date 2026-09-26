@@ -1,0 +1,50 @@
+[
+  {
+    "id": "confronto_vinganca",
+    "name": "Confronto & Vingança",
+    "category": "Ação Dinâmica & Alta Tensão",
+    "badge": "Mais Usado",
+    "description": "Ritmo acelerado focado em injustiça, gancho imediato nos primeiros 3 segundos, intercalação com os socos e falas mais marcantes do filme dublado e acerto de contas.",
+    "pacing": "Rápido (cortes a cada 2.5s a 4s)",
+    "hook_style": "Choque visual e moral imediato",
+    "retention_score": "98%",
+    "recommended_aspect": "1:1 ou 9:16",
+    "is_default": true
+  },
+  {
+    "id": "micro_historia_suspense",
+    "name": "Micro-História Tensa (Suspense)",
+    "category": "Mistério & Urgência",
+    "badge": "Retenção Máxima",
+    "description": "Foco em uma única micro-cena de alta pressão psicológica. O narrador em 1ª pessoa expõe a armadilha ou o perigo iminente enquanto o filme desenrola a tensão.",
+    "pacing": "Cadenciado e tenso (cortes a cada 3s a 5s)",
+    "hook_style": "Perigo silencioso ou contagem regressiva",
+    "retention_score": "95%",
+    "recommended_aspect": "1:1 ou 9:16",
+    "is_default": true
+  },
+  {
+    "id": "revelacao_virada",
+    "name": "Revelação & Virada Inesperada",
+    "category": "Quebra de Expectativa & Plot Twist",
+    "badge": "Viral",
+    "description": "História que parece seguir para um lado e tem uma quebra de expectativa total no meio. O narrador revela um segredo que muda o sentido da cena.",
+    "pacing": "Crescente com aceleração no clímax",
+    "hook_style": "Premissa enganosa e gancho surpresa",
+    "retention_score": "96%",
+    "recommended_aspect": "1:1 ou 9:16",
+    "is_default": true
+  },
+  {
+    "id": "drama_superacao",
+    "name": "Drama & Conexão Emocional",
+    "category": "Conexão Humana & Redenção",
+    "badge": "Comovente",
+    "description": "Foco na dor, proteção de vulneráveis e redenção moral do protagonista. Diálogos emotivos em 100% de volume com narração íntima e sincera.",
+    "pacing": "Emotivo, valorizando close-ups e olhares",
+    "hook_style": "Dilema moral comovente",
+    "retention_score": "94%",
+    "recommended_aspect": "1:1 ou 9:16",
+    "is_default": true
+  }
+]

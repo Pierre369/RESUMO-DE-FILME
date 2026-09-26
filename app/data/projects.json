@@ -1,0 +1,38 @@
+[
+  {
+    "id": "proj_palmer_master",
+    "title": "Palmer: O Acerto de Contas no Bar",
+    "movie_title": "Palmer (2021) Dublado.mp4",
+    "character": "Eddie Palmer (Protagonista)",
+    "scene_name": "Confronto no Bar em Defesa de Sam",
+    "style_id": "confronto_vinganca",
+    "style_name": "Confronto & Vingança",
+    "aspect_ratio": "1:1",
+    "duration_sec": 98.2,
+    "cuts_count": 19,
+    "status": "completed",
+    "output_filename": "palmer_1x1_resumo.mp4",
+    "output_url": "/static/output/palmer_1x1_resumo.mp4",
+    "thumbnail_url": "/static/thumbs/thumb_24195.jpg",
+    "created_at": "26/09/2026 17:02",
+    "mode": "Diretor Guiado"
+  },
+  {
+    "id": "proj_8ce1ac2e",
+    "title": "Palmer (2021) Dublado: A Vingança no Bar (Confronto Físico)",
+    "movie_title": "Palmer (2021) Dublado.mp4",
+    "character": "Eddie Palmer",
+    "scene_name": "A Vingança no Bar (Confronto Físico)",
+    "style_id": "confronto_vinganca",
+    "style_name": "Confronto & Vingança",
+    "aspect_ratio": "1:1",
+    "duration_sec": 90.0,
+    "cuts_count": 18,
+    "status": "completed",
+    "output_filename": "cineshort_auto_622968f2_1x1.mp4",
+    "output_url": "/static/output/cineshort_auto_622968f2_1x1.mp4",
+    "thumbnail_url": "/static/thumbs/thumb_24195.jpg",
+    "created_at": "26/09/2026 17:03",
+    "mode": "Inteligente (Automático)"
+  }
+]
