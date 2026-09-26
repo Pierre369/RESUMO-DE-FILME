@@ -219,10 +219,11 @@ document.addEventListener("DOMContentLoaded", () => {
             <span class="text-[10px] font-mono text-emerald-400">${s.retention_score}</span>
           </div>
           <h4 class="text-xs font-bold text-white">${s.name}</h4>
-          <p class="text-[11px] text-zinc-400 mt-1 line-clamp-3 leading-relaxed">${s.description}</p>
+          <p class="text-[11px] text-zinc-400 mt-1 line-clamp-2 leading-relaxed">${s.description}</p>
+          <div class="mt-2 text-[10px] text-emerald-400 font-medium">🎯 Quando usar: <span class="text-zinc-300 font-normal">${s.use_case || 'Cenas de impacto'}</span></div>
         </div>
         <div class="pt-2 border-t border-matte-800 text-[10px] text-zinc-500">
-          Ritmo: <span class="text-zinc-300">${s.pacing}</span>
+          Cadência: <span class="text-zinc-300">${s.pacing}</span>
         </div>
       `;
       dashboardStylePreviews.appendChild(card);
@@ -366,9 +367,12 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
             <h3 class="text-sm font-bold text-white">${s.name}</h3>
             <p class="text-xs text-zinc-400 leading-relaxed">${s.description}</p>
+            <div class="p-2.5 rounded-lg bg-matte-850/80 border border-matte-800 text-[11px] text-emerald-400 font-medium">
+              🎯 <span class="text-zinc-200">Quando usar:</span> ${s.use_case || 'Cortes virais e micro-cenas'}
+            </div>
           </div>
           <div class="pt-3 border-t border-matte-800 grid grid-cols-2 gap-2 text-[11px] text-zinc-400">
-            <div>Ritmo: <span class="text-zinc-200">${s.pacing}</span></div>
+            <div>Cadência: <span class="text-zinc-200">${s.pacing}</span></div>
             <div>Gancho: <span class="text-zinc-200">${s.hook_style}</span></div>
           </div>
         `;
@@ -458,9 +462,27 @@ document.addEventListener("DOMContentLoaded", () => {
       allStyles.forEach(s => {
         const opt = document.createElement("option");
         opt.value = s.id;
-        opt.innerText = `${s.name} (${s.category} - Retenção: ${s.retention_score})`;
+        opt.innerText = `${s.name} • [${s.category}]`;
         creatorStyleSelect.appendChild(opt);
       });
+
+      function updateStyleInfoBox() {
+        const selectedId = creatorStyleSelect.value;
+        const curStyle = allStyles.find(s => s.id === selectedId) || allStyles[0];
+        if (curStyle) {
+          const nameEl = document.getElementById("infobox-style-name");
+          const descEl = document.getElementById("infobox-style-desc");
+          const useEl = document.getElementById("infobox-style-usecase");
+          const paceEl = document.getElementById("infobox-style-pacing");
+          if (nameEl) nameEl.innerText = curStyle.name;
+          if (descEl) descEl.innerText = curStyle.description;
+          if (useEl) useEl.innerText = curStyle.use_case || "Cortes dinâmicos de alta retenção";
+          if (paceEl) paceEl.innerText = curStyle.pacing;
+        }
+      }
+
+      creatorStyleSelect.onchange = updateStyleInfoBox;
+      updateStyleInfoBox();
 
       // Auto update if movie changes while guided flow is visible
       creatorMovieSelect.onchange = () => {

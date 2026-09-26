@@ -1,7 +1,7 @@
 """
 Serviço de gerenciamento de Modelos de Estilo Narrativo.
-Permite listar presets pré-definidos (com nomes conceituais, sem nome de filmes)
-e cadastrar novos modelos com ou sem upload de vídeos de referência.
+Define com clareza a mecânica exata (1ª pessoa intercalada, 3ª pessoa, duelo de diálogos)
+e especifica para que cada modelo serve.
 """
 
 import os
@@ -15,49 +15,53 @@ STYLES_FILE = os.path.join(DATA_DIR, "styles.json")
 
 DEFAULT_STYLES = [
     {
-        "id": "confronto_vinganca",
-        "name": "Confronto & Vingança",
-        "category": "Ação Dinâmica & Alta Tensão",
-        "badge": "Mais Usado",
-        "description": "Ritmo acelerado focado em injustiça, gancho imediato nos primeiros 3 segundos, intercalação com os socos e falas mais marcantes do filme dublado e acerto de contas.",
-        "pacing": "Rápido (cortes a cada 2.5s a 4s)",
-        "hook_style": "Choque visual e moral imediato",
-        "retention_score": "98%",
+        "id": "narracao_hibrida_1p",
+        "name": "Narração Híbrida em 1ª Pessoa (O Modelo Viral TikTok)",
+        "category": "1ª Pessoa Intercalada com Filme Dublado",
+        "badge": "Mais Usado • 99% Retenção",
+        "description": "O protagonista narra em 1ª pessoa ('Eu tava lá, fiz isso...') com ritmo frenético (+16%), alternando sem pausas mortas com os diálogos originais dublados do filme a 100% de volume sob ducking inteligente (-22dB).",
+        "use_case": "Micro-cenas de alto impacto, vingança, quebra de expectativas, confrontos diretos e clímax onde o espectador vive a cena na pele do personagem.",
+        "pacing": "Frenético e contínuo (corte seco imediato quando a fala termina)",
+        "hook_style": "Choque imediato nos primeiros 3s em 1ª pessoa",
+        "retention_score": "99%",
         "recommended_aspect": "1:1 ou 9:16",
         "is_default": True
     },
     {
-        "id": "micro_historia_suspense",
-        "name": "Micro-História Tensa (Suspense)",
-        "category": "Mistério & Urgência",
-        "badge": "Retenção Máxima",
-        "description": "Foco em uma única micro-cena de alta pressão psicológica. O narrador em 1ª pessoa expõe a armadilha ou o perigo iminente enquanto o filme desenrola a tensão.",
-        "pacing": "Cadenciado e tenso (cortes a cada 3s a 5s)",
-        "hook_style": "Perigo silencioso ou contagem regressiva",
-        "retention_score": "95%",
-        "recommended_aspect": "1:1 ou 9:16",
-        "is_default": True
-    },
-    {
-        "id": "revelacao_virada",
-        "name": "Revelação & Virada Inesperada",
-        "category": "Quebra de Expectativa & Plot Twist",
-        "badge": "Viral",
-        "description": "História que parece seguir para um lado e tem uma quebra de expectativa total no meio. O narrador revela um segredo que muda o sentido da cena.",
-        "pacing": "Crescente com aceleração no clímax",
-        "hook_style": "Premissa enganosa e gancho surpresa",
+        "id": "duelo_dialogos_filme",
+        "name": "Duelo de Diálogos & Embate (80% Foco no Filme Dublado)",
+        "category": "Foco nos Diálogos Originais",
+        "badge": "Ação & Discussão",
+        "description": "Narração ultracurta de gancho inicial (4s) e transições pontuais, dando protagonismo quase total para os atores do filme dublado brigarem, discutirem ou negociarem a 100% de volume.",
+        "use_case": "Cenas icônicas de tribunal, discussões tensas, interrogatórios, ameaças cara a cara e embates verbais dramáticos.",
+        "pacing": "Tenso e dramático, guiado pelas pausas e reações dos atores",
+        "hook_style": "Apresentação rápida da ameaça antes do embate",
         "retention_score": "96%",
         "recommended_aspect": "1:1 ou 9:16",
         "is_default": True
     },
     {
-        "id": "drama_superacao",
-        "name": "Drama & Conexão Emocional",
-        "category": "Conexão Humana & Redenção",
-        "badge": "Comovente",
-        "description": "Foco na dor, proteção de vulneráveis e redenção moral do protagonista. Diálogos emotivos em 100% de volume com narração íntima e sincera.",
-        "pacing": "Emotivo, valorizando close-ups e olhares",
-        "hook_style": "Dilema moral comovente",
+        "id": "narrador_onisciente_3p",
+        "name": "Narrador Onisciente & Reações (3ª Pessoa Dinâmica)",
+        "category": "3ª Pessoa Externa com Cortes de Reação",
+        "badge": "Mistério & Conspiração",
+        "description": "Voz externa enérgica contando os fatos em 3ª pessoa ('Esse homem achou que ia enganar todo mundo...'), com perguntas instigantes que cortam imediatamente para a reação dublada do filme.",
+        "use_case": "Histórias de crimes, golpes, filmes com múltiplos personagens, mistérios não resolvidos e conspirações.",
+        "pacing": "Investigativo e ágil",
+        "hook_style": "Pergunta retórica intrigante ou segredo exposto",
+        "retention_score": "95%",
+        "recommended_aspect": "1:1 ou 9:16",
+        "is_default": True
+    },
+    {
+        "id": "storytelling_emocional_1p",
+        "name": "Storytelling Íntimo & Redenção (1ª Pessoa Emocional)",
+        "category": "1ª Pessoa Profunda",
+        "badge": "Drama & Conexão",
+        "description": "O personagem desabafa em 1ª pessoa de forma sincera e vulnerável, intercalando com os diálogos mais comoventes e close-ups expressivos do filme dublado.",
+        "use_case": "Filmes de drama, histórias de pais e filhos, superação de traumas, amizades improváveis e despedidas.",
+        "pacing": "Emotivo e contínuo, valorizando expressões e redenção",
+        "hook_style": "Confissão sincera de um erro ou sacrifício",
         "retention_score": "94%",
         "recommended_aspect": "1:1 ou 9:16",
         "is_default": True
@@ -67,8 +71,8 @@ DEFAULT_STYLES = [
 class StyleService:
     def __init__(self):
         os.makedirs(DATA_DIR, exist_ok=True)
-        if not os.path.exists(STYLES_FILE):
-            self._save_styles(DEFAULT_STYLES)
+        # Sempre salva a versão mais recente e clara
+        self._save_styles(DEFAULT_STYLES)
 
     def _load_styles(self) -> List[Dict[str, Any]]:
         try:
@@ -98,6 +102,7 @@ class StyleService:
         description: str,
         pacing: str = "Dinâmico",
         hook_style: str = "Gancho de impacto",
+        use_case: str = "Resumos personalizados",
         reference_video_path: Optional[str] = None
     ) -> Dict[str, Any]:
         styles = self._load_styles()
@@ -107,6 +112,7 @@ class StyleService:
             "category": category,
             "badge": "Personalizado",
             "description": description,
+            "use_case": use_case,
             "pacing": pacing,
             "hook_style": hook_style,
             "retention_score": "90%+",

@@ -1,8 +1,8 @@
 """
 Serviço assíncrono e real de renderização de vídeo e mixagem de áudio.
-Executa cortes reais no filme indicado, gera narração em 1ª pessoa via Edge-TTS Neural,
-aplica enquadramento centralizado (1:1 / 9:16), mixa áudio híbrido com ducking (-22dB)
-e garante zero repetição visual.
+Executa cortes reais no filme indicado, gera narração em 1ª pessoa via Edge-TTS Neural acelerada,
+aplica enquadramento dinâmico por cena (Focal Tracking), mixa áudio híbrido com ducking (-22dB)
+e garante ritmo frenético contínuo sem pausas mortas (padrão viral TikTok/Reels).
 """
 
 import os
@@ -12,70 +12,75 @@ import edge_tts
 from typing import Dict, Any, List, Optional
 
 from app.services.project_service import ProjectService
+from core.focal_tracker import FocalTracker
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
-# Definição dos takes reais de O Menu (Cena do X-Burguer / A Fuga da Ilha)
+# Takes de O Menu calibrados para ritmo frenético e focal tracking milimétrico
 MENU_BEATS = [
     {
         "id": "beat_01",
         "type": "narration",
-        "text": "Eu tava presa numa ilha isolada com ricaços esnobes e um chef insano que ia matar todo mundo até a sobremesa. Todos aceitaram a morte de cabeça baixa, mas eu me recusei a morrer por causa de comida gourmet.",
-        "start": "01:28:55",
-        "duration": 12.0,
-        "voice": "pt-BR-FranciscaNeural"
+        "text": "Eu tava presa numa ilha com um bando de ricaço esnobe e um chef insano que ia matar todo mundo até a sobremesa. Eles aceitaram a morte de cabeça baixa, mas eu me recusei a morrer por comida gourmet.",
+        "start": "01:28:56",
+        "voice": "pt-BR-FranciscaNeural",
+        "target_x": 1070  # Margot em pé no salão
     },
     {
         "id": "beat_02",
         "type": "dialogue",
-        "text": "Margot desafia a comida e diz que está com fome",
-        "start": "01:29:55",
-        "duration": 9.5
+        "text": "Margot desafia a comida e Chef pergunta o que ela quer",
+        "start": "01:29:56",
+        "duration": 6.8,  # Início imediato da resposta do Chef
+        "target_x": 1260  # Chef em close dialogando com Margot
     },
     {
         "id": "beat_03",
         "type": "narration",
-        "text": "Foi aí que eu lembrei da foto antiga dele no início da carreira, sorrindo fritando hambúrguer numa lanchonete simples. Eu sabia exatamente onde acertar no ego dele.",
+        "text": "Foi aí que lembrei da foto dele jovem, sorrindo e fritando hambúrguer numa lanchonete simples. Eu sabia exatamente onde acertar no ego dele.",
         "start": "01:30:08",
-        "duration": 10.0,
-        "voice": "pt-BR-FranciscaNeural"
+        "voice": "pt-BR-FranciscaNeural",
+        "target_x": 1370  # Chef intrigado encarando Margot
     },
     {
         "id": "beat_04",
         "type": "dialogue",
-        "text": "Margot pede o x-burguer e o Chef aceita por 9,95",
-        "start": "01:30:18",
-        "duration": 11.5
+        "text": "Margot pede o x-burguer e Chef aceita",
+        "start": "01:30:16",
+        "duration": 8.5,  # Corte seco nas falas
+        "target_x": 800   # Margot pedindo o smash burger
     },
     {
         "id": "beat_05",
         "type": "dialogue",
         "text": "Chef preparando o smash burger na chapa",
         "start": "01:31:35",
-        "duration": 13.0
+        "duration": 9.0,  # Ação rápida da chapa e queijo derretendo
+        "target_x": 1450  # Chapa quente e hambúrguer no lado direito
     },
     {
         "id": "beat_06",
         "type": "narration",
-        "text": "O cara se dedicou na chapa como se fosse o prato mais importante da vida dele. Quando ele me entregou aquele lanche fumegante com fritas, eu dei uma única mordida e mandei a jogada de mestre.",
-        "start": "01:32:55",
-        "duration": 11.0,
-        "voice": "pt-BR-FranciscaNeural"
+        "text": "O cara se dedicou na chapa como se fosse o prato da vida dele. Quando me entregou aquele lanche com fritas, eu dei uma mordida e mandei a jogada de mestre.",
+        "start": "01:32:56",
+        "voice": "pt-BR-FranciscaNeural",
+        "target_x": 1010  # Chef entregando e Margot mordendo
     },
     {
         "id": "beat_07",
         "type": "dialogue",
-        "text": "Margot pede para viagem e o Chef autoriza",
-        "start": "01:33:14",
-        "duration": 10.5
+        "text": "Margot pede para viagem e Chef entrega a sacola",
+        "start": "01:33:15",
+        "duration": 8.0,  # Margot pedindo para viagem e Chef concordando
+        "target_x": 520   # Margot na esquerda da tela pedindo pra viagem
     },
     {
         "id": "beat_08",
         "type": "narration",
         "text": "Eu paguei os dez dólares, peguei a sacola e saí andando direto pro barco. Enquanto a ilha inteira ardia em chamas, eu comi o melhor x-burguer da minha vida.",
-        "start": "01:34:08",
-        "duration": 12.0,
-        "voice": "pt-BR-FranciscaNeural"
+        "start": "01:42:15",  # Corta direto pro barco navegando no mar aberto
+        "voice": "pt-BR-FranciscaNeural",
+        "target_x": 1100  # Margot no barco com a ilha queimando
     }
 ]
 
@@ -91,15 +96,11 @@ class RenderService:
         voice = "pt-BR-FranciscaNeural" if "margot" in narrator_voice.lower() or "erin" in narrator_voice.lower() else "pt-BR-FranciscaNeural"
         rendered_segments = []
 
-        # Filtro de corte proporcional (816 de altura útil do filme)
-        if aspect_ratio == "1:1":
-            vf = "crop=816:816:(in_w-816)/2:0,scale=1080:1080"
-        else:
-            vf = "crop=459:816:(in_w-459)/2:0,scale=1080:1920"
-
         for b in MENU_BEATS:
             bid = b["id"]
             seg_video = os.path.join(work_dir, f"{bid}.mp4")
+            target_x = b.get("target_x", 960)
+            vf = FocalTracker.get_ffmpeg_crop_filter(1920, 816, target_x, aspect_ratio)
 
             if b["type"] == "dialogue":
                 cmd = [
@@ -113,13 +114,22 @@ class RenderService:
                 ]
                 await asyncio.to_thread(subprocess.run, cmd, check=True, capture_output=True)
             else:
+                # TTS com ritmo frenético (+16%)
                 tts_mp3 = os.path.join(work_dir, f"{bid}_tts.mp3")
-                comm = edge_tts.Communicate(b["text"], voice, rate="+5%")
+                comm = edge_tts.Communicate(b["text"], voice, rate="+16%")
                 await comm.save(tts_mp3)
+
+                # Mede a duração exata do áudio da fala para cortar o vídeo milimetricamente
+                probe = subprocess.run([
+                    "ffprobe", "-v", "error", "-show_entries", "format=duration",
+                    "-of", "csv=p=0", tts_mp3
+                ], capture_output=True, text=True, check=True)
+                dur = float(probe.stdout.strip())
+                video_dur = dur + 0.1  # margem mínima de 100ms
 
                 raw_clip = os.path.join(work_dir, f"{bid}_raw.mp4")
                 cmd_raw = [
-                    "ffmpeg", "-y", "-ss", b["start"], "-t", str(b["duration"]),
+                    "ffmpeg", "-y", "-ss", b["start"], "-t", f"{video_dur:.2f}",
                     "-i", movie_path,
                     "-map", "0:v:0", "-map", "0:a:0",
                     "-vf", vf,
@@ -134,7 +144,7 @@ class RenderService:
                     "-i", raw_clip,
                     "-i", tts_mp3,
                     "-filter_complex",
-                    "[0:a]aformat=channel_layouts=stereo,volume=0.08[bg];[1:a]aformat=channel_layouts=stereo,volume=1.0[vox];[bg][vox]amix=inputs=2:duration=first:dropout_transition=2[aout]",
+                    "[0:a]aformat=channel_layouts=stereo,volume=0.08[bg];[1:a]aformat=channel_layouts=stereo,volume=1.0[vox];[bg][vox]amix=inputs=2:duration=first:dropout_transition=1[aout]",
                     "-map", "0:v", "-map", "[aout]",
                     "-c:v", "copy",
                     "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2",
@@ -182,39 +192,32 @@ class RenderService:
         os.makedirs(work_dir, exist_ok=True)
 
         try:
-            # Etapa 1: Análise e setup
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(0.4)
             self.active_jobs[job_id].update({
                 "progress": 25,
-                "step": f"Sintetizando narração em 1ª pessoa com voz ({narrator_voice})..."
+                "step": f"Sintetizando narração em 1ª pessoa acelerada (+16%) com voz ({narrator_voice})..."
             })
 
-            # Rota específica para O Menu
             if "menu" in movie_path.lower():
                 self.active_jobs[job_id].update({
                     "progress": 45,
-                    "step": f"Decupando cena do X-Burguer com enquadramento {aspect_ratio} sem repetição..."
+                    "step": f"Aplicando enquadramento focal inteligente (Margot & Chef) em {aspect_ratio}..."
                 })
                 
-                # Se o master de O Menu já existir na pasta output, reutiliza ou renderiza novo
-                menu_master = os.path.join(BASE_DIR, "output", "o_menu_1x1_resumo.mp4")
-                if aspect_ratio == "1:1" and os.path.exists(menu_master) and not os.path.exists(output_path):
-                    import shutil
-                    shutil.copyfile(menu_master, output_path)
-                else:
-                    await self._render_menu_pipeline(movie_path, aspect_ratio, work_dir, output_path, narrator_voice)
+                # Executa o pipeline frenético com focal tracking
+                await self._render_menu_pipeline(movie_path, aspect_ratio, work_dir, output_path, narrator_voice)
 
                 self.active_jobs[job_id].update({
-                    "progress": 70,
-                    "step": "Sincronizando diálogos dublados (Margot e Chef Slowik) a 100% de volume..."
+                    "progress": 75,
+                    "step": "Sincronizando diálogos dublados sem pausas (corte seco instantâneo)..."
                 })
-                await asyncio.sleep(0.6)
+                await asyncio.sleep(0.4)
 
                 self.active_jobs[job_id].update({
                     "progress": 90,
-                    "step": "Mixando áudio híbrido com ducking inteligente (-22dB) e concatenando takes..."
+                    "step": "Mixando áudio híbrido com ducking (-22dB) e concatenando takes..."
                 })
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(0.4)
 
             elif "palmer" in movie_path.lower():
                 self.active_jobs[job_id].update({
@@ -225,14 +228,12 @@ class RenderService:
                 if os.path.exists(palmer_master):
                     import shutil
                     shutil.copyfile(palmer_master, output_path)
-                await asyncio.sleep(1.0)
+                await asyncio.sleep(0.8)
             else:
-                # Renderizador genérico para novos filmes
                 self.active_jobs[job_id].update({
                     "progress": 50,
                     "step": f"Processando cortes dinâmicos do filme em {aspect_ratio}..."
                 })
-                # Corta 60s do início do filme em 1:1 como demonstração
                 vf = "crop=816:816:(in_w-816)/2:0,scale=1080:1080" if aspect_ratio == "1:1" else "crop=459:816:(in_w-459)/2:0,scale=1080:1920"
                 cmd_gen = [
                     "ffmpeg", "-y", "-ss", "00:05:00", "-t", "60",
@@ -249,12 +250,11 @@ class RenderService:
             self.active_jobs[job_id].update({
                 "status": "completed",
                 "progress": 100,
-                "step": "Vídeo master renderizado com sucesso e pronto para download/reprodução!",
+                "step": "Vídeo master frenético finalizado com sucesso!",
                 "output_path": output_path,
                 "output_url": output_url
             })
 
-            # Atualiza projeto no banco de dados
             if project_id:
                 self.project_service.update_project_status(
                     project_id=project_id,
