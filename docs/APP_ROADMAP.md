@@ -1,131 +1,122 @@
-# Arquitetura e Roadmap do Aplicativo: CineShorts Engine
+# Arquitetura e Blueprint do Aplicativo: CineShorts Engine
 
-Este documento serve como a **planta de engenharia (blueprint)** para transformar este pipeline de scripts em uma aplicação completa (SaaS Web ou Desktop App via Electron/Tauri), projetada para automatizar a produção de vídeos verticais (9:16) a partir de longas-metragens.
+Este documento define a especificação completa de engenharia, arquitetura de software e roadmap para transformar este ecossistema em um **aplicativo comercial de alta performance** (Desktop App via Electron/Tauri ou SaaS Web local).
 
 ---
 
 ## 1. Visão Geral do Produto
 
-O objetivo do aplicativo é permitir que criadores de conteúdo, canais de resumo e produtoras gerem vídeos cinematográficos em formato 9:16 com retenção máxima, utilizando inteligência artificial para roteirização em 1ª pessoa, síntese de voz dramática, decupagem automática e enquadramento dinâmico dos sujeitos.
+O **CineShorts Engine** é um estúdio automatizado para criadores de conteúdo que transforma longas-metragens em vídeos virais de alta retenção (formatos 1:1 e 9:16) através de:
+1. **Engenharia Reversa de Vídeo de Referência:** O usuário faz upload de um vídeo de exemplo e o app replica seu estilo de ritmo, cortes e linguagem.
+2. **Conexão Nativa ao Antigravity CLI / SDK:** O app utiliza o agente do próprio usuário em segundo plano (zero custo de API de LLM).
+3. **Clonagem Neural de Voz do Protagonista:** Extração de dataset vocal multi-sample do próprio filme e síntese via XTTS-v2 na GPU local.
+4. **Áudio Híbrido Intercalado:** Alternância inteligente entre narração em 1ª pessoa e falas dubladas icônicas do filme.
+5. **Montagem de Zero Repetição:** Cada corte avança a ação sem reutilizar planos ou cansar a atenção do espectador.
 
 ---
 
-## 2. Arquitetura de Alto Nível
+## 2. Integração com o Antigravity (CLI & Python SDK)
+
+O diferencial arquitetural do app é **não depender de chaves de API pagas pelo desenvolvedor**. O app detecta e utiliza o ambiente local do Antigravity do próprio usuário:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                 FRONTEND (Next.js / Tauri)                  │
-│  - Editor de Roteiro (WPM & Previews de Áudio)              │
-│  - Timeline de Cortes & Marcadores de Cena                  │
-│  - Player Interativo com Bounding Box 9:16 Ajustável        │
+│                    SEU APLICATIVO (UI/UX)                   │
+│         Desktop (Tauri/Electron) ou Web Local (Next.js)     │
 └──────────────────────────────┬──────────────────────────────┘
-                               │ HTTP / WebSocket (Progresso)
+                               │ Chamada Assíncrona Local
 ┌──────────────────────────────▼──────────────────────────────┐
-│                    BACKEND (FastAPI Core)                   │
-│  - Orquestrador de Jobs (Celery / Redis Queue)              │
-│  - API de Projetos, Mídias e Configurações                  │
-└──────┬───────────────────────┬───────────────────────┬──────┘
-       │                       │                       │
-┌──────▼──────┐         ┌──────▼──────┐         ┌──────▼──────┐
-│  MOTOR IA   │         │  VISÃO COMP │         │ MOTOR MÍDIA │
-│  - LLM Roteiro│       │  - PySceneDetect│     │  - FFmpeg   │
-│  - Edge/Eleven│       │  - YOLOv8 /   │       │    (NVENC)  │
-│  - Whisper  │         │    MediaPipe  │       │  - Concat   │
-└─────────────┘         └─────────────┘         └─────────────┘
+│           ANTIGRAVITY PYTHON SDK (google-antigravity)       │
+│                               ou                            │
+│           ANTIGRAVITY CLI (agy headless subprocess)         │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                ┌──────────────┴──────────────┐
+                │                             │
+    ┌───────────▼───────────┐     ┌───────────▼───────────┐
+    │  Roteirista Autônomo   │     │ Decupador Cinemático  │
+    │  (Análise de Legendas │     │ (Seleção de Cenas     │
+    │   e Engenharia Reversa│     │  e Timestamps Chave)  │
+    └───────────────────────┘     └───────────────────────┘
+```
+
+### Exemplo de Conexão no Backend do App:
+```python
+from google.antigravity import Agent, LocalAgentConfig, CapabilitiesConfig
+
+async def processar_filme_com_antigravity(filme_path, video_referencia_path):
+    config = LocalAgentConfig(
+        system_instructions="Você é o diretor de montagem especialista no estilo CineShorts...",
+        capabilities=CapabilitiesConfig()
+    )
+    async with Agent(config) as agent:
+        # O agente analisa o vídeo de referência e a cena do filme
+        prompt = f"""
+        Analise o vídeo de referência em {video_referencia_path}.
+        Extraia o padrão de vocabulário, ritmo e intercalação.
+        Gere o roteiro em 1ª pessoa e a lista de cortes para o filme {filme_path}.
+        """
+        response = await agent.chat(prompt)
+        async for token in response:
+            yield token  # Transmissão em tempo real para a barra de progresso do App
 ```
 
 ---
 
-## 3. Componentes e Módulos do Sistema
+## 3. Funcionalidades Principais da Interface do App
 
-### 3.1 Módulo 1: Roteirista de IA (Screenplay Engine)
-- **Função:** Ler o arquivo de legendas original do filme (`.srt` de 2 horas) ou transcrição completa.
-- **Prompt Estruturado:**
-  - Identificar o personagem selecionado pelo usuário.
-  - Selecionar os 8 a 12 eventos cruciais da jornada daquele personagem.
-  - Escrever a narração em 1ª pessoa respeitando a métrica de 350-420 palavras (~3 minutos).
-  - Inserir marcas de direção dramática `[...]` para respiração da voz.
+### 3.1 Upload & Análise de Vídeo de Referência
+- O usuário solta um vídeo do TikTok/Reels que viralizou.
+- O motor de IA extrai automaticamente:
+  - Duração ideal (ex: 75s a 110s).
+  - Padrão de cortes (frequência de troca de plano a cada 2.5s a 4.5s).
+  - Nível de gírias e coloquialismo brasileiro (ex: *"engoli seco com farinha"*).
+  - Pontos de corte de áudio onde a cena original sobe a 100%.
 
-### 3.2 Módulo 2: Motor de Voz e Sincronia Temporal (TTS & Align)
-- **Síntese de Voz:**
-  - Integração com `edge-tts` (gratuito) e provedores premium (`ElevenLabs`, `Kokoro-82M`).
-  - Aplicação automática de taxa de velocidade cinemática (-9% a -12%).
-- **Sincronia Palavra por Palavra:**
-  - `faster-whisper` para gerar timestamps exatos de cada palavra.
-  - Permite gerar legendas animadas no estilo "Hormozi / TikTok" no frontend.
+### 3.2 Seletor de Aspect Ratio
+- **Modo 1:1 Quadrado (1080×1080):** Ideal para manter dois atores em cena, expressões faciais completas e combates amplos sem cortes agressivos nas laterais.
+- **Modo 9:16 Vertical (1080×1920):** Enquadramento total de tela vertical para imersão em smartphones.
 
-### 3.3 Módulo 3: Visão Computacional e Auto-Framing (Focal AI)
-- **Detecção de Cortes (Scene Splitter):**
-  - Utiliza `PySceneDetect` (AdaptiveDetector) para segmentar o filme em tomadas puras, evitando que o corte 9:16 atravesse duas tomadas com enquadramentos opostos.
-- **Rastreamento de Sujeito (Auto-Centering):**
-  - Modelo `YOLOv8-pose` ou `MediaPipe Face/Body Detection`.
-  - Para cada sub-corte, o modelo identifica as pessoas na tela, calcula quem está falando ou em primeiro plano e define o centro horizontal ideal:
-    $$X_{target} = \frac{x_{min} + x_{max}}{2}$$
-  - O backend converte automaticamente esse centro para o parâmetro FFmpeg:
-    $$X_{crop} = \text{clamp}(X'_{target} - 540, 0, W_{scaled} - 1080)$$
+### 3.3 Extrator Automático de Dataset Vocal (Voice Clone Studio)
+- O app varre o filme dublado usando Whisper e encontra automaticamente 5 a 6 trechos de falas limpas do protagonista (sem trilha sonora de fundo).
+- Constrói o **Dataset Multi-Sample** do ator (~30 segundos de fala).
+- O motor XTTS-v2 processa na GPU local (RTX 4060) e gera a voz clonada com fidelidade máxima.
 
-### 3.4 Módulo 4: Editor Visual Interativo (UI/UX)
-- **Timeline Interativa:** Exibe a trilha de áudio narrada em cima e a régua de takes do filme embaixo.
-- **Janela de Ajuste 9:16:**
-  - O usuário vê a tela original em 16:9 widescreen.
-  - Uma máscara retangular vertical (9:16) é sobreposta. O usuário pode arrastar a máscara para a esquerda ou direita se desejar sobrescrever o foco automático da IA.
-
-### 3.5 Módulo 5: Renderizador Distribuído (High Performance)
-- **Aceleração por Hardware:** Uso de `h264_nvenc` (NVIDIA) ou `h264_amf` (AMD) para renderizar os 60+ sub-cortes em segundos em vez de minutos.
-- **Pipeline em Lote:** Renderização simultânea de múltiplos trechos em threads isoladas, unificados via `FFmpeg concat demuxer`.
-- **Ducking Automatizado:** Mixagem estéreo com curva de compressão sidechain ou ducking fixo de ambiência (-22 dB).
+### 3.4 Sequenciador Visual com Regra de Zero Repetição
+- Algoritmo que valida que **nenhum timestamp de corte visual se repete ou sobrepõe**.
+- Toda vez que a narração corta para a fala do filme, a câmera muda de ângulo ou avança o tempo cronológico.
 
 ---
 
-## 4. Estrutura do Banco de Dados / Projeto
+## 4. Estrutura de Pastas do Aplicativo
 
-```json
-{
-  "project_id": "proj_spiderman_001",
-  "movie_file": "/storage/movies/homem_aranha.mp4",
-  "character": "Peter Parker",
-  "script": {
-    "text": "Eu só queria ser normal de novo...",
-    "duration_target_seconds": 180,
-    "words_count": 395
-  },
-  "audio": {
-    "tts_voice": "pt-BR-AntonioNeural",
-    "rate": "-9%",
-    "film_volume": 0.08,
-    "voice_volume": 1.25
-  },
-  "cuts": [
-    {
-      "id": 1,
-      "time_in": "00:00:15.500",
-      "time_out": "00:00:18.000",
-      "duration": 2.500,
-      "focus_target": "face_peter",
-      "target_x": 960,
-      "crop_x": 1140,
-      "locked_by_user": false
-    }
-  ]
-}
+```text
+app/
+├── frontend/               # Interface do Usuário (Next.js + Tailwind + Lucide Icons)
+│   ├── components/
+│   │   ├── VideoUploader.tsx
+│   │   ├── AspectRatioSelector.tsx
+│   │   ├── TimelineEditor.tsx
+│   │   └── VoiceCloneStudio.tsx
+├── backend/                # Servidor de API (FastAPI + Python 3.11)
+│   ├── api/
+│   │   ├── routes_project.py
+│   │   ├── routes_antigravity.py
+│   │   └── routes_render.py
+│   ├── engine/
+│   │   ├── focal_tracker.py
+│   │   ├── voice_clone.py
+│   │   └── video_renderer.py
+│   └── main.py
+└── run_app.bat             # Inicializador em 1 clique
 ```
 
 ---
 
-## 5. Fases de Implementação Recomendadas
+## 5. Próximos Passos de Desenvolvimento
 
-### Fase 1: API Core & Automação Local (Atual)
-- [x] Motor de decupagem e cálculo 9:16 verificado e funcional (`core/`).
-- [x] CLI para execução por linha de comando (`cli.py`).
-- [x] Integração com Edge-TTS e mixagem com ducking.
-- [x] Exemplos de projeto com dados reais validados.
-
-### Fase 2: Backend REST & IA de Rastreamento (Próximo Passo)
-- [ ] API FastAPI expondo endpoints `/api/project`, `/api/script/generate`, `/api/cuts/detect`, `/api/render`.
-- [ ] Integração do detector de faces YOLOv8 para sugerir automaticamente `target_x` e `crop_x` de cada take.
-- [ ] Suporte a aceleração GPU no FFmpeg (`h264_nvenc`).
-
-### Fase 3: Interface Web / Desktop
-- [ ] Criação do painel visual em Next.js / Tailwind.
-- [ ] Player de vídeo com overlay interativo de enquadramento 9:16.
-- [ ] Exportação direta com 1 clique para formatos de redes sociais.
+1. **[Concluído]** Validação do motor de decupagem 1:1 e 9:16.
+2. **[Concluído]** Clonagem de voz neural multi-sample na RTX 4060.
+3. **[Concluído]** Áudio híbrido com intercalação de falas do filme.
+4. **[Próximo]** Construção do backend FastAPI expondo os comandos para a interface gráfica.
+5. **[Próximo]** Criação da interface desktop/web com seletor de vídeos e pré-visualização em tempo real.

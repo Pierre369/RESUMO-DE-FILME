@@ -1,23 +1,23 @@
-# 🎬 CineShorts Engine | Resumo de Filme Vertical (9:16)
+# 🎬 CineShorts Engine | Resumos de Filmes Virais (1:1 & 9:16)
 
-[![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/)
+[![CUDA](https://img.shields.io/badge/CUDA-12%20Accelerated-green.svg)]()
 [![FFmpeg](https://img.shields.io/badge/FFmpeg-Required-green.svg)](https://ffmpeg.org/)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
-[![Format](https://img.shields.io/badge/Aspect%20Ratio-9%3A16%20Vertical-orange.svg)]()
+[![Format](https://img.shields.io/badge/Aspect%20Ratio-1%3A1%20%26%209%3A16-orange.svg)]()
 
-> **Motor cinematográfico completo para transformar longas-metragens em vídeos verticais (1080x1920) de alta retenção para TikTok, Instagram Reels e YouTube Shorts.**
-> Narração envolvente em primeira pessoa, enquadramento dinâmico dos sujeitos e mixagem imersiva com o áudio original do filme.
+> **Motor cinematográfico completo para transformar filmes em vídeos virais de alta retenção para TikTok, Instagram Reels, YouTube Shorts e Facebook Watch.**
+> Suporte nativo a formatos **1:1 Quadrado** e **9:16 Vertical**, clonagem neural de voz do protagonista via **XTTS-v2 Multi-Sample**, áudio híbrido intercalado com falas do filme e montagem com **zero repetição de cena**.
 
 ---
 
 ## 🌟 Principais Recursos
 
-- 📐 **Enquadramento 9:16 Dinâmico (Focal Centering):** Preenchimento 100% da tela (sem barras pretas), mantendo os rostos, atores e objetos principais perfeitamente centralizados em cada plano.
-- 🎭 **Storytelling em 1ª Pessoa:** Roteirização cinematográfica contada pelo próprio protagonista/antagonista com estrutura em 3 atos.
-- 🎙️ **Síntese de Voz Neural:** Integração com vozes neurais da Microsoft (`edge-tts`), calibradas para cadência dramática (-9% de velocidade).
-- 🔊 **Sound Design com Ducking:** A ambiência, os passos, os tiros e a trilha do filme continuam audíveis ao fundo (-22 dB), criando uma experiência imersiva com a narração em primeiro plano.
-- ⚡ **Renderização Multi-Thread:** Segmentação em sub-cortes processados em paralelo pelo FFmpeg e unidos com precisão sem perda de qualidade via *concat demuxer*.
-- 🚀 **Pronto para Virar App:** Arquitetura limpa e desacoplada em módulos Python, ideal para servir de backend em um SaaS Web ou Desktop App.
+- 📐 **Formatos 1:1 Quadrado & 9:16 Vertical:** O usuário pode alternar entre o formato quadrado (1080x1080) — que preserva o cenário e dois atores conversando simultaneamente — ou tela cheia vertical (1080x1920), com reenquadramento focal automático.
+- 🎙️ **Clonagem de Voz Neural Multi-Sample (XTTS-v2):** Extrai amostras de falas reais do protagonista direto do filme e sintetiza a narração em 1ª pessoa reproduzindo com fidelidade o timbre, a ressonância e o sotaque em português brasileiro.
+- 🗣️ **Áudio Híbrido Dinâmico:** A narração contextualiza a história com ducking (-22 dB), mas nos momentos de falas marcantes ou socos/tiros, ela silencia e a dublagem original do filme sobe para 100% de volume.
+- ✂️ **Regra de Zero Repetição:** Cada corte avança a ação cronológica para a frente sem nunca repetir o mesmo ângulo ou cena que o espectador já viu.
+- 🤖 **Integração com Antigravity CLI & Python SDK:** O futuro aplicativo se conecta diretamente ao Antigravity instalado na máquina do usuário para executar roteirização e decupagem em segundo plano com **zero custo de API de LLM**.
 
 ---
 
@@ -25,17 +25,20 @@
 
 ```mermaid
 flowchart TD
-    A[Filme Original Widescreen 16:9 / 2.39:1] --> B[Decupagem & Detecção de Cenas]
-    C[Roteiro Dramático em 1ª Pessoa] --> D[Síntese Neural TTS edge-tts]
-    D --> E[Sincronização Temporal Whisper]
+    A[Filme Original Widescreen 16:9 / 2.39:1] --> B[Decupagem & Extração de Dataset Vocal]
+    B --> C[Dataset Multi-Sample do Protagonista]
+    C --> D[Motor de Clonagem XTTS-v2 no CUDA]
     
-    B --> F[Cálculo de Crop 9:16 Focal]
-    F --> G[Renderização Paralela de Sub-cortes]
+    E[Roteiro em 1ª Pessoa Coloquial Abrasileirado] --> D
+    D --> F[Narrações Clonadas em PT-BR]
     
-    G --> H[FFmpeg Concat Demuxer]
-    D --> I[Mixagem & Ducking de Áudio]
-    H --> J[Vídeo Final 1080x1920 60fps/24fps]
-    I --> J
+    A --> G[Cálculo de Enquadramento 1:1 ou 9:16]
+    G --> H[Renderização dos Sub-cortes Limpos]
+    
+    F --> I[Mixagem Híbrida: Voz Clonada + Falas Originais do Filme]
+    H --> J[FFmpeg Concat Demuxer]
+    I --> K[Vídeo Final Master 1080x1080 ou 1080x1920]
+    J --> K
 ```
 
 ---
@@ -46,23 +49,21 @@ flowchart TD
 RESUMO-DE-FILME/
 ├── core/                       # Módulos centrais da engine
 │   ├── __init__.py
-│   ├── config.py               # Dataclasses de configuração (Vídeo, Áudio, TTS)
-│   ├── focal_tracker.py        # Matemática de centralização e crop 9:16
-│   ├── pipeline.py             # Orquestrador mestre do fluxo
-│   ├── scene_detector.py       # Algoritmos de corte e detecção de transições
-│   ├── screenplay.py           # Análise e validação dramática de roteiro
-│   ├── subtitle_sync.py        # Alinhamento de legendas via Whisper
-│   ├── tts_engine.py           # Gerador de voz neural (Edge-TTS)
-│   └── video_renderer.py       # Renderizador paralelo e mixer FFmpeg
-├── docs/                       # Documentação aprofundada
-│   ├── APP_ROADMAP.md          # Especificação para construir SaaS / App Desktop
-│   └── PIPELINE_GUIDE.md       # Guia operacional passo a passo para editores
-├── examples/                   # Exemplo prático completo validado
+│   ├── config.py               # Suporte a 1:1, 9:16, áudio híbrido e clonagem
+│   ├── focal_tracker.py        # Matemática de crop 1:1 e 9:16
+│   ├── voice_clone.py          # Motor XTTS-v2 com multi-sample embeddings
+│   ├── video_renderer.py       # Renderizador paralelo e mixer FFmpeg
+│   ├── scene_detector.py       # Algoritmos de detecção de cortes
+│   ├── screenplay.py           # Análise e métricas de roteiro
+│   └── pipeline.py             # Orquestrador mestre
+├── docs/                       # Documentação e Roadmap
+│   ├── APP_ROADMAP.md          # Blueprint para o Software/App (Antigravity SDK)
+│   └── PIPELINE_GUIDE.md       # Guia operacional passo a passo
+├── examples/                   # Exemplos práticos completos validados
 │   └── homem_aranha/
 │       ├── roteiro_narracao.txt
 │       ├── legendas.srt
 │       ├── mapa_de_cortes.json
-│       ├── mapa_de_cortes.csv
 │       └── narracao.mp3
 ├── ARCHITECTURE.md             # Especificação matemática e técnica detalhada
 ├── cli.py                      # Interface de Linha de Comando (CLI)
@@ -73,66 +74,48 @@ RESUMO-DE-FILME/
 
 ---
 
-## 🚀 Instalação e Pré-requisitos
+## 🚀 Instalação e Execução
 
-### 1. Pré-requisitos do Sistema
-- **Python 3.10 ou superior**
-- **FFmpeg instalado e acessível no PATH do sistema** (verifique executando `ffmpeg -version`)
+### 1. Pré-requisitos
+- **Python 3.11**
+- **GPU NVIDIA com suporte a CUDA** (testado na RTX 4060 com 8GB VRAM)
+- **FFmpeg no PATH**
 
-### 2. Clonar o Repositório e Instalar Dependências
+### 2. Instalar Dependências
 ```bash
 git clone https://github.com/Pierre369/RESUMO-DE-FILME.git
 cd RESUMO-DE-FILME
 
-# Criar e ativar ambiente virtual
+# Criar ambiente virtual
 python -m venv .venv
-# No Windows:
 .venv\Scripts\activate
-# No Linux/macOS:
-source .venv/bin/activate
 
 # Instalar dependências
 pip install -r requirements.txt
+pip install coqui-tts
 ```
 
 ---
 
-## 💻 Como Usar (CLI)
+## 💻 Como Usar
 
-O projeto conta com uma ferramenta CLI (`cli.py`) completa:
-
-### 1. Validar Métrica do Roteiro
-Analisa a quantidade de palavras, tempo estimado de fala e ritmo:
+### 1. Calcular Enquadramento (1:1 ou 9:16)
 ```bash
-python cli.py script-check --script examples/homem_aranha/roteiro_narracao.txt
+python cli.py crop-calc --target-x 960 --orig-w 1920 --orig-h 800
 ```
 
-### 2. Gerar a Narração com Voz Neural
-Gera o áudio com a voz neural configurada e velocidade cinematográfica:
+### 2. Renderizar Resumo com Voz Clonada
 ```bash
-python cli.py tts --script examples/homem_aranha/roteiro_narracao.txt --output narracao.mp3 --voice pt-BR-AntonioNeural --rate "-9%"
-```
-
-### 3. Calcular Coordenadas de Enquadramento 9:16
-Calcula instantaneamente o parâmetro `crop_x` do FFmpeg para centralizar o ponto de interesse:
-```bash
-python cli.py crop-calc --target-x 960 --orig-w 1920 --orig-h 1080
-# Saída esperada: crop_x = 1140 (centralizado perfeitamente no frame 1080x1920)
-```
-
-### 4. Renderizar o Vídeo Final Completo
-Executa o corte de todos os takes, reenquadramento 9:16, mixagem com ducking de som do filme e exportação:
-```bash
-python cli.py render --movie "FILME/meu_filme.mp4" --cut-map "mapa_de_cortes.json" --audio "narracao.mp3" --output "video_final_vertical.mp4" --threads 4
+python render_palmer_cloned_1to1.py
 ```
 
 ---
 
 ## 📚 Documentação Adicional
 
-- [📘 Guia Completo da Pipeline (docs/PIPELINE_GUIDE.md)](docs/PIPELINE_GUIDE.md): Passo a passo detalhado de edição, ritmo e enquadramento.
-- [🔬 Especificação Técnica de Arquitetura (ARCHITECTURE.md)](ARCHITECTURE.md): Dedução matemática das matrizes de crop, filtros FFmpeg e ducking.
-- [📱 Blueprint do Aplicativo / SaaS (docs/APP_ROADMAP.md)](docs/APP_ROADMAP.md): Estrutura recomendada de banco de dados, frontend e IA para transformar este projeto em um software comercial.
+- [📘 Blueprint do Aplicativo / SaaS (docs/APP_ROADMAP.md)](docs/APP_ROADMAP.md): Como conectar o Antigravity via CLI/SDK e estruturar o software comercial.
+- [🔬 Especificação Técnica de Arquitetura (ARCHITECTURE.md)](ARCHITECTURE.md): Dedução matemática de crop e filtros FFmpeg.
+- [📘 Guia Completo da Pipeline (docs/PIPELINE_GUIDE.md)](docs/PIPELINE_GUIDE.md): Passo a passo detalhado de montagem e retenção.
 
 ---
 

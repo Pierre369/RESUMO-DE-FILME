@@ -15,6 +15,20 @@ temp/
 scratch/
 subcuts*/
 raw_*.*
+palmer_work*/
+palmer_narration*/
+palmer_master_dataset*/
+temp_*/
+bar_transcription.txt
+
+# Root scratch and test scripts (kept in workspace, excluded from git)
+/temp_*.py
+/test_*.py
+/extract_*.py
+/find_*.py
+/generate_*.py
+/create_*.py
+/render_*.py
 
 # Root loose example files (organized inside examples/homem_aranha/)
 /legendas.srt
