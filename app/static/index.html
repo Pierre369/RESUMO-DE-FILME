@@ -99,6 +99,18 @@
 
     <!-- Bottom Status Area -->
     <div class="p-4 border-t border-matte-800 bg-matte-900/60 space-y-2.5 text-xs">
+      <!-- Voice Cloning Settings Trigger -->
+      <button id="btn-open-settings-modal" class="w-full text-left p-2 rounded-lg bg-matte-850 border border-matte-800 hover:border-zinc-700 transition flex items-center justify-between group">
+        <div class="flex items-center gap-2">
+          <span id="voice-status-dot" class="w-2 h-2 rounded-full bg-amber-500"></span>
+          <div>
+            <div class="text-[11px] font-semibold text-white group-hover:text-zinc-200">Fish Audio API</div>
+            <div id="voice-status-text" class="text-[10px] text-zinc-400">Verificando...</div>
+          </div>
+        </div>
+        <i data-lucide="key" class="w-3.5 h-3.5 text-zinc-500 group-hover:text-white transition"></i>
+      </button>
+
       <div class="flex items-center justify-between text-[11px] text-zinc-400">
         <span class="flex items-center gap-1.5">
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -611,6 +623,43 @@
       <div class="pt-2 flex justify-end gap-2">
         <button id="btn-cancel-create-style" class="px-4 py-2 rounded-lg bg-matte-850 border border-matte-800 text-xs text-zinc-300 hover:text-white">Cancelar</button>
         <button id="btn-save-new-style" class="px-4 py-2 rounded-lg bg-white text-black font-bold text-xs hover:bg-zinc-200">Salvar Modelo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS / OPENROUTER API KEYS MODAL -->
+  <div id="settings-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-matte-900 border border-matte-800 rounded-2xl w-full max-w-md p-6 space-y-5 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-matte-800 pb-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="key" class="w-5 h-5 text-zinc-300"></i>
+          <h3 class="text-sm font-bold text-white">Configurar Clonagem de Voz</h3>
+        </div>
+        <button id="btn-close-settings-modal" class="text-zinc-400 hover:text-white p-1 rounded-lg">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      
+      <div class="space-y-3.5">
+        <p class="text-xs text-zinc-400 leading-relaxed">
+          Insira sua chave de API do <strong class="text-white">OpenRouter</strong> para ativar a clonagem sem delay com o modelo <code class="text-zinc-200 bg-matte-850 px-1.5 py-0.5 rounded text-[11px] font-mono">fish-audio/s2.1-pro</code>. Se nenhuma chave for configurada, o estúdio utilizará automaticamente o <strong class="text-zinc-300">Edge-TTS Neural acelerado (+16%)</strong> como fallback.
+        </p>
+        
+        <div>
+          <label class="text-[11px] font-semibold text-zinc-300 block mb-1">Chave OpenRouter (sk-or-...)</label>
+          <input type="password" id="input-openrouter-key" placeholder="sk-or-v1-..." class="w-full bg-matte-950 border border-matte-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500 font-mono">
+        </div>
+        
+        <div id="settings-key-feedback" class="text-[11px] text-zinc-300 hidden p-2.5 rounded-lg bg-matte-850 border border-matte-800 leading-relaxed"></div>
+      </div>
+
+      <div class="flex gap-2 pt-2 border-t border-matte-800">
+        <button id="btn-test-openrouter-key" class="flex-1 py-2 px-3 rounded-xl bg-matte-850 border border-matte-800 hover:border-zinc-600 text-xs font-medium text-white transition flex items-center justify-center gap-1.5">
+          <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Testar Chave
+        </button>
+        <button id="btn-save-openrouter-key" class="flex-1 py-2 px-3 rounded-xl bg-white hover:bg-zinc-200 text-xs font-bold text-black transition flex items-center justify-center gap-1.5">
+          <i data-lucide="save" class="w-3.5 h-3.5 fill-black"></i> Salvar Chave
+        </button>
       </div>
     </div>
   </div>

@@ -52,5 +52,23 @@
     "thumbnail_url": "/static/thumbs/thumb_61769.jpg",
     "created_at": "26/09/2026 17:37",
     "mode": "Inteligente (Automático)"
+  },
+  {
+    "id": "proj_98b28931",
+    "title": "O Menu 2022 1080p WEB-DL DUAL 5.1: O Golpe do X-Burguer (A Fuga Genial)",
+    "movie_title": "O Menu 2022 1080p WEB-DL DUAL 5.1.mkv",
+    "character": "Margot Mills (Erin)",
+    "scene_name": "O Golpe do X-Burguer (A Fuga Genial)",
+    "style_id": "narracao_hibrida_1p",
+    "style_name": "Narração Híbrida em 1ª Pessoa (O Modelo Viral TikTok)",
+    "aspect_ratio": "1:1",
+    "duration_sec": 90.0,
+    "cuts_count": 18,
+    "status": "completed",
+    "output_filename": "cineshort_auto_ccab66af_1x1.mp4",
+    "output_url": "/static/output/cineshort_auto_ccab66af_1x1.mp4",
+    "thumbnail_url": "/static/thumbs/thumb_61769.jpg",
+    "created_at": "26/09/2026 18:03",
+    "mode": "Inteligente (Automático)"
   }
 ]

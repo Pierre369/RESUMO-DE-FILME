@@ -98,6 +98,9 @@ class CreateStyleRequest(BaseModel):
     pacing: str = "Dinâmico"
     hook_style: str = "Gancho de impacto"
 
+class SaveKeyRequest(BaseModel):
+    openrouter_api_key: str
+
 # --- Rotas da Aplicação ---
 
 @app.get("/")
@@ -107,11 +110,26 @@ async def root():
         return FileResponse(index_file)
     return {"message": "CineShorts Studio API is running. UI not found."}
 
+@app.get("/api/settings/keys")
+async def get_key_settings():
+    return render_service.voice_service.get_key_status()
+
+@app.post("/api/settings/keys")
+async def save_key_settings(req: SaveKeyRequest):
+    render_service.voice_service.save_api_key(req.openrouter_api_key)
+    return {"success": True, **render_service.voice_service.get_key_status()}
+
+@app.post("/api/settings/test-key")
+async def test_key_settings(req: SaveKeyRequest):
+    result = await render_service.voice_service.test_api_key(req.openrouter_api_key)
+    return result
+
 @app.get("/api/status")
 async def get_system_status():
     ag_info = antigravity_bridge.check_connection()
     projects = project_service.list_projects()
     completed_count = sum(1 for p in projects if p.get("status") == "completed")
+    voice_info = render_service.voice_service.get_key_status()
     return {
         "antigravity": ag_info,
         "gpu": {
@@ -120,6 +138,7 @@ async def get_system_status():
             "cuda": "12.x / 13.x",
             "status": "Ativo & Acelerado"
         },
+        "voice": voice_info,
         "stats": {
             "total_projects": len(projects),
             "completed_projects": completed_count,

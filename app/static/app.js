@@ -72,6 +72,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const modalDownloadLink = document.getElementById("modal-download-link");
   const modalVideoBox = document.getElementById("modal-video-box");
 
+  // Settings & Voice Cloning elements
+  const btnOpenSettingsModal = document.getElementById("btn-open-settings-modal");
+  const settingsModal = document.getElementById("settings-modal");
+  const btnCloseSettingsModal = document.getElementById("btn-close-settings-modal");
+  const inputOpenrouterKey = document.getElementById("input-openrouter-key");
+  const btnTestOpenrouterKey = document.getElementById("btn-test-openrouter-key");
+  const btnSaveOpenrouterKey = document.getElementById("btn-save-openrouter-key");
+  const settingsKeyFeedback = document.getElementById("settings-key-feedback");
+  const voiceStatusDot = document.getElementById("voice-status-dot");
+  const voiceStatusText = document.getElementById("voice-status-text");
+
   // State
   let currentCharacters = [];
   let selectedCharacter = null;
@@ -294,13 +305,14 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".btn-play-project").forEach(b => {
       b.onclick = (e) => {
         const btn = e.currentTarget;
-        const url = btn.getAttribute("data-url");
+        const rawUrl = btn.getAttribute("data-url");
+        const url = rawUrl ? (rawUrl.includes("?t=") ? rawUrl : `${rawUrl}?t=${Date.now()}`) : "";
         const title = btn.getAttribute("data-title");
         const aspect = btn.getAttribute("data-aspect") || "1:1";
 
         modalVideoTitle.innerText = title;
         modalVideoPlayer.src = url;
-        modalDownloadLink.href = url;
+        modalDownloadLink.href = rawUrl;
         modalVideoInfo.innerText = aspect === "1:1" ? "1080x1080 (1:1 Quadrado) • Áudio Híbrido" : "1080x1920 (9:16 Vertical) • Áudio Híbrido";
 
         if (aspect === "1:1") {
@@ -807,9 +819,10 @@ document.addEventListener("DOMContentLoaded", () => {
           monitorStepText.innerText = "Vídeo master gerado e finalizado com sucesso!";
           monitorPlayerBox.classList.remove("hidden");
 
-          const videoUrl = data.output_url || `/static/output/${outputFilename || 'palmer_1x1_resumo.mp4'}`;
+          const rawUrl = data.output_url || `/static/output/${outputFilename || 'palmer_1x1_resumo.mp4'}`;
+          const videoUrl = `${rawUrl}?t=${Date.now()}`;
           monitorVideo.src = videoUrl;
-          btnDownloadVideo.href = videoUrl;
+          btnDownloadVideo.href = rawUrl;
 
           monitorFormatBadge.innerText = aspect === "1:1" ? "1:1 Quadrado" : "9:16 Vertical";
           if (aspect === "1:1") {
@@ -820,6 +833,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
           monitorVideo.load();
           monitorVideo.play().catch(() => {});
+          loadProjects();
+          loadDashboard();
         } else if (data.status === "error") {
           clearInterval(interval);
           monitorStepText.innerText = data.step;
@@ -830,6 +845,123 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 700);
   }
 
+  // ========================================================
+  // SETTINGS & OPENROUTER API KEY MANAGEMENT
+  // ========================================================
+  async function checkVoiceKeyStatus() {
+    try {
+      const res = await fetch("/api/settings/keys");
+      const data = await res.json();
+      if (data.has_key) {
+        if (voiceStatusDot) {
+          voiceStatusDot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+        }
+        if (voiceStatusText) {
+          voiceStatusText.innerText = `Ativo (${data.masked_key})`;
+        }
+      } else {
+        if (voiceStatusDot) {
+          voiceStatusDot.className = "w-2 h-2 rounded-full bg-amber-500";
+        }
+        if (voiceStatusText) {
+          voiceStatusText.innerText = `Chave pendente (Edge Fallback)`;
+        }
+      }
+    } catch (e) {
+      console.error("Erro ao verificar status de voz:", e);
+    }
+  }
+
+  if (btnOpenSettingsModal) {
+    btnOpenSettingsModal.onclick = () => {
+      settingsModal.classList.remove("hidden");
+      settingsKeyFeedback.classList.add("hidden");
+      if (window.lucide) lucide.createIcons();
+    };
+  }
+  if (btnCloseSettingsModal) {
+    btnCloseSettingsModal.onclick = () => {
+      settingsModal.classList.add("hidden");
+    };
+  }
+  if (settingsModal) {
+    settingsModal.onclick = (e) => {
+      if (e.target === settingsModal) settingsModal.classList.add("hidden");
+    };
+  }
+
+  if (btnTestOpenrouterKey) {
+    btnTestOpenrouterKey.onclick = async () => {
+      const key = inputOpenrouterKey.value.trim();
+      if (!key) {
+        settingsKeyFeedback.className = "text-[11px] text-amber-400 p-2.5 rounded-lg bg-amber-950/40 border border-amber-800 leading-relaxed block";
+        settingsKeyFeedback.innerText = "Por favor, digite a chave de API para testar.";
+        return;
+      }
+      btnTestOpenrouterKey.disabled = true;
+      btnTestOpenrouterKey.innerHTML = `<span class="animate-spin mr-1">⏳</span> Testando...`;
+      try {
+        const res = await fetch("/api/settings/test-key", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ openrouter_api_key: key })
+        });
+        const data = await res.json();
+        btnTestOpenrouterKey.disabled = false;
+        btnTestOpenrouterKey.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Testar Chave`;
+        if (data.valid) {
+          settingsKeyFeedback.className = "text-[11px] text-emerald-400 p-2.5 rounded-lg bg-emerald-950/40 border border-emerald-800 leading-relaxed block";
+          settingsKeyFeedback.innerText = `✅ Chave Válida! Identificada como "${data.label}". Ativa para clonagem de voz sem delay via Fish Audio S2.1 Pro.`;
+        } else {
+          settingsKeyFeedback.className = "text-[11px] text-red-400 p-2.5 rounded-lg bg-red-950/40 border border-red-800 leading-relaxed block";
+          settingsKeyFeedback.innerText = `❌ Falha ao validar chave: ${data.error || 'Não autorizada'}`;
+        }
+      } catch (e) {
+        btnTestOpenrouterKey.disabled = false;
+        btnTestOpenrouterKey.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Testar Chave`;
+        settingsKeyFeedback.className = "text-[11px] text-red-400 p-2.5 rounded-lg bg-red-950/40 border border-red-800 leading-relaxed block";
+        settingsKeyFeedback.innerText = `Erro de conexão: ${e.message}`;
+      }
+      if (window.lucide) lucide.createIcons();
+    };
+  }
+
+  if (btnSaveOpenrouterKey) {
+    btnSaveOpenrouterKey.onclick = async () => {
+      const key = inputOpenrouterKey.value.trim();
+      if (!key) {
+        alert("Por favor, digite uma chave de API antes de salvar.");
+        return;
+      }
+      btnSaveOpenrouterKey.disabled = true;
+      btnSaveOpenrouterKey.innerHTML = `<span class="animate-spin mr-1">⏳</span> Salvando...`;
+      try {
+        const res = await fetch("/api/settings/keys", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ openrouter_api_key: key })
+        });
+        const data = await res.json();
+        btnSaveOpenrouterKey.disabled = false;
+        btnSaveOpenrouterKey.innerHTML = `<i data-lucide="save" class="w-3.5 h-3.5 fill-black"></i> Salvar Chave`;
+        if (data.success) {
+          settingsKeyFeedback.className = "text-[11px] text-emerald-400 p-2.5 rounded-lg bg-emerald-950/40 border border-emerald-800 leading-relaxed block";
+          settingsKeyFeedback.innerText = `✅ Chave gravada com sucesso! Motor Fish Audio ativo (${data.masked_key}).`;
+          checkVoiceKeyStatus();
+          setTimeout(() => {
+            settingsModal.classList.add("hidden");
+          }, 1500);
+        }
+      } catch (e) {
+        btnSaveOpenrouterKey.disabled = false;
+        btnSaveOpenrouterKey.innerHTML = `<i data-lucide="save" class="w-3.5 h-3.5 fill-black"></i> Salvar Chave`;
+        alert("Erro ao salvar chave: " + e.message);
+      }
+      if (window.lucide) lucide.createIcons();
+    };
+  }
+
   // Initial Load
+  checkVoiceKeyStatus();
   switchView("dashboard", "Dashboard");
 });
