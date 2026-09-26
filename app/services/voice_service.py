@@ -145,6 +145,9 @@ class VoiceService:
         ou Edge-TTS Neural acelerado como fallback de alta fidelidade.
         """
         # Tenta OpenRouter Fish Audio se a chave estiver configurada
+        if not self.api_key:
+            self.api_key = self._load_api_key()
+
         if self.api_key:
             sample_wav = self.extract_character_sample(movie_path, character_name)
             if sample_wav and os.path.exists(sample_wav):
