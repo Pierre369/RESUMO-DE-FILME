@@ -1,0 +1,30 @@
+{
+  "project_name": "Resumo de Filme Vertical",
+  "version": "1.0.0",
+  "video": {
+    "target_width": 1080,
+    "target_height": 1920,
+    "fps": 24.0,
+    "crf": 18,
+    "preset": "fast",
+    "threads": 4
+  },
+  "audio": {
+    "sample_rate": 48000,
+    "voice_volume": 1.25,
+    "film_ducking_volume": 0.08
+  },
+  "tts": {
+    "voice": "pt-BR-AntonioNeural",
+    "rate": "-9%",
+    "pitch": "+0Hz"
+  },
+  "paths": {
+    "raw_movie": "FILME/filme_origem.mp4",
+    "script": "roteiro_narracao.txt",
+    "subtitles": "legendas.srt",
+    "cut_map": "mapa_de_cortes.json",
+    "output_dir": "output",
+    "final_video": "video_final_vertical.mp4"
+  }
+}
