@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CineShorts Studio | Resumo de Filmes com IA</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            matte: {
+              950: '#09090b',
+              900: '#121215',
+              850: '#18181b',
+              800: '#27272a',
+              700: '#3f3f46',
+              400: '#a1a1aa',
+              100: '#f4f4f5'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #09090b;
+      color: #f4f4f5;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #121215;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #27272a;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-zinc-700 selection:text-white">
+
+  <!-- TOP BAR -->
+  <header class="border-b border-matte-800 bg-matte-950/80 backdrop-blur sticky top-0 z-50 px-6 py-3.5 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <div class="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-black font-black text-sm tracking-tighter">
+        CS
+      </div>
+      <div>
+        <h1 class="text-base font-bold tracking-tight text-white flex items-center gap-2">
+          CineShorts Studio
+          <span class="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 font-mono font-normal">v1.0.0</span>
+        </h1>
+      </div>
+    </div>
+
+    <!-- System Status Badges -->
+    <div class="flex items-center gap-3">
+      <!-- Antigravity Status -->
+      <div id="ag-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-matte-900 border border-matte-800 text-xs font-medium text-zinc-300">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span id="ag-status-text">Antigravity CLI: Conectado</span>
+      </div>
+
+      <!-- GPU Status -->
+      <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-matte-900 border border-matte-800 text-xs font-medium text-zinc-400">
+        <i data-lucide="cpu" class="w-3.5 h-3.5 text-zinc-400"></i>
+        <span>RTX 4060 (8GB CUDA)</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
+    
+    <!-- LEFT PANEL: Editor & Workflow (8 cols) -->
+    <div class="lg:col-span-7 space-y-6">
+      
+      <!-- STEP 1: Seleção de Filme e Referência -->
+      <section class="bg-matte-900 border border-matte-800 rounded-xl p-5 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-zinc-800 text-zinc-300 text-xs font-bold flex items-center justify-center">1</span>
+            <h2 class="text-sm font-semibold tracking-tight text-white uppercase text-zinc-300">Filme & Vídeo de Referência</h2>
+          </div>
+          <span class="text-xs text-zinc-500">Origem & Estilo</span>
+        </div>
+
+        <!-- Movie Dropdown -->
+        <div>
+          <label class="block text-xs font-medium text-zinc-400 mb-1.5">Filme de Origem (HD / Dublado)</label>
+          <select id="movie-select" class="w-full bg-matte-850 border border-matte-800 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-zinc-500 transition">
+            <option value="">Carregando filmes disponíveis...</option>
+          </select>
+        </div>
+
+        <!-- Reference Video Selection -->
+        <div>
+          <label class="block text-xs font-medium text-zinc-400 mb-1.5">Modelo de Estilo / Vídeo de Referência</label>
+          <select id="ref-select" class="w-full bg-matte-850 border border-matte-800 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-zinc-500 transition">
+            <option value="plano_familia">Plano em Família (Micro-Cena de Ação / Intercalação Híbrida - 1:1)</option>
+            <option value="bixo_esperto">Bixo Esperto (Mini-História com Suspense & Gancho - 1:1)</option>
+            <option value="savetik">SaveTik (Tensão no Escritório / Perseguição - 1:1)</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- STEP 2: Aspect Ratio & Formato -->
+      <section class="bg-matte-900 border border-matte-800 rounded-xl p-5 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-zinc-800 text-zinc-300 text-xs font-bold flex items-center justify-center">2</span>
+            <h2 class="text-sm font-semibold tracking-tight text-white uppercase text-zinc-300">Enquadramento & Duração</h2>
+          </div>
+          <span class="text-xs text-zinc-500">Resolução e Ritmo</span>
+        </div>
+
+        <!-- Aspect Ratio Toggle -->
+        <div class="grid grid-cols-2 gap-3">
+          <!-- 1:1 Option -->
+          <label class="relative flex flex-col p-4 border border-matte-800 rounded-xl cursor-pointer hover:border-zinc-600 transition bg-matte-850/50 has-[:checked]:border-white has-[:checked]:bg-matte-850">
+            <input type="radio" name="aspect-ratio" value="1:1" checked class="sr-only">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-bold text-white flex items-center gap-1.5">
+                <i data-lucide="square" class="w-4 h-4 text-zinc-300"></i>
+                1:1 Quadrado
+              </span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 font-mono">1080x1080</span>
+            </div>
+            <p class="text-xs text-zinc-400 leading-relaxed">
+              Ideal para manter 2 personagens em cena e ação aberta sem cortes laterais agressivos.
+            </p>
+          </label>
+
+          <!-- 9:16 Option -->
+          <label class="relative flex flex-col p-4 border border-matte-800 rounded-xl cursor-pointer hover:border-zinc-600 transition bg-matte-850/50 has-[:checked]:border-white has-[:checked]:bg-matte-850">
+            <input type="radio" name="aspect-ratio" value="9:16" class="sr-only">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-bold text-white flex items-center gap-1.5">
+                <i data-lucide="smartphone" class="w-4 h-4 text-zinc-300"></i>
+                9:16 Vertical
+              </span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 font-mono">1080x1920</span>
+            </div>
+            <p class="text-xs text-zinc-400 leading-relaxed">
+              Preenchimento 100% de tela vertical para imersão total no TikTok, Reels e Shorts.
+            </p>
+          </label>
+        </div>
+
+        <!-- Duration Picker -->
+        <div class="pt-2 flex items-center justify-between text-xs text-zinc-400">
+          <span>Duração Alvo do Vídeo:</span>
+          <div class="flex gap-2">
+            <button type="button" class="px-3 py-1 rounded-md bg-matte-850 border border-matte-800 text-white font-medium hover:border-zinc-600">60s</button>
+            <button type="button" class="px-3 py-1 rounded-md bg-white text-black font-semibold">90s (Ideal)</button>
+            <button type="button" class="px-3 py-1 rounded-md bg-matte-850 border border-matte-800 text-white font-medium hover:border-zinc-600">120s</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 3: Roteiro & Timeline Híbrida -->
+      <section class="bg-matte-900 border border-matte-800 rounded-xl p-5 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-zinc-800 text-zinc-300 text-xs font-bold flex items-center justify-center">3</span>
+            <h2 class="text-sm font-semibold tracking-tight text-white uppercase text-zinc-300">Roteiro & Áudio Híbrido (1ª Pessoa)</h2>
+          </div>
+          <button id="btn-ai-script" class="flex items-center gap-1.5 text-xs text-zinc-300 hover:text-white px-2.5 py-1 rounded bg-matte-850 border border-matte-800 hover:border-zinc-600 transition">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-emerald-400"></i>
+            Gerar com Antigravity
+          </button>
+        </div>
+
+        <!-- Script Textarea -->
+        <div>
+          <textarea id="script-input" rows="7" class="w-full bg-matte-850 border border-matte-800 rounded-lg p-3 text-xs leading-relaxed text-zinc-200 font-mono focus:outline-none focus:border-zinc-500 transition custom-scroll" placeholder="O roteiro estruturado aparecerá aqui...">[00:00 - 00:15] NARRAÇÃO (PALMER):
+Eu cheguei em casa e encontrei o pequeno Sam trancado no quarto, chorando com a cara toda borrada de maquiagem, achei que fossem moleques da escola enchendo o saco dele, e até tentei dar um conselho de homem...
+
+[00:15 - 00:20] DIÁLOGO DO FILME (DUBLADO - 100%):
+Palmer: "Escuta, garoto... eu sei que você não quer ouvir isso, mas às vezes tem que revidar."
+
+[00:20 - 00:30] DIÁLOGO DO FILME (DUBLADO - 100%):
+Sam: "Não foram garotos... Foi o pai do Tommy. O seu amigo Daryl."
+
+[00:30 - 00:41] NARRAÇÃO (PALMER):
+Na mesma hora meu sangue ferveu, não era moleque nenhum da idade dele, era o desgraçado do meu amigo Daryl, um marmanjo de mais de trinta anos se achando o valentão.
+
+[00:41 - 00:46] DIÁLOGO DO FILME (DUBLADO - 100%):
+Maggie: "Eddie! Eddie, pra onde você tá indo? Eddie, não faz isso!"
+
+[00:46 - 00:58] NARRAÇÃO (PALMER):
+Aquele covarde achou que podia humilhar uma criança indefesa e sair rindo à toa, grande erro, eu atravessei a cidade pisando fundo e fui direto pro bar onde ele tava bebendo com os amigos.
+
+[00:58 - 01:06] DIÁLOGO DO FILME (DUBLADO - 100%):
+Palmer: "Acha engraçado, é?! Ver um adulto segurar um garotinho e fazer ele chorar passando maquiagem na cara dele?!"
+
+[01:06 - 01:15] AÇÃO DO FILME (DUBLADO - 100%):
+[Palmer acerta as contas violentamente; Daryl vai ao chão; o bar inteiro fica paralisado em choque]
+
+[01:15 - 01:24] NARRAÇÃO (PALMER):
+Ele achou que eu ia ficar com medo de perder a condicional e engolir seco, só que tem coisas que um homem não deixa passar batido.
+
+[01:24 - 01:32] DIÁLOGO DO FILME (DUBLADO - 100%):
+Maggie: "Vai fazer o quê? Bater em todo mundo que mexer com ele?!"
+Palmer: "Não... só em quem tem mais de trinta."
+
+[01:32 - 01:38] NARRAÇÃO (PALMER - FINAL):
+Depois daquele dia todo mundo na cidade entendeu o recado, ninguém mais mexeu com o garoto.</textarea>
+        </div>
+
+        <!-- Legend Tags -->
+        <div class="flex flex-wrap gap-2 text-[11px] text-zinc-400">
+          <span class="flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300">
+            <span class="w-2 h-2 rounded-full bg-blue-500"></span> Narração com Ducking (-22dB)
+          </span>
+          <span class="flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300">
+            <span class="w-2 h-2 rounded-full bg-amber-500"></span> Falas Originais Dubladas (100%)
+          </span>
+          <span class="flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Regra Zero Repetição
+          </span>
+        </div>
+      </section>
+
+      <!-- RENDER TRIGGER BUTTON -->
+      <div>
+        <button id="btn-render" class="w-full py-4 px-6 rounded-xl bg-white text-black font-bold text-sm tracking-tight hover:bg-zinc-200 transition shadow-lg flex items-center justify-center gap-2">
+          <i data-lucide="play" class="w-4 h-4 fill-black"></i>
+          <span>RENDERIZAR VÍDEO MASTER COM 1 CLIQUE</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- RIGHT PANEL: Preview Player & Progress (5 cols) -->
+    <div class="lg:col-span-5 space-y-6">
+      
+      <!-- Live Video Player Card -->
+      <section class="bg-matte-900 border border-matte-800 rounded-xl p-5 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-semibold tracking-tight text-white uppercase text-zinc-300 flex items-center gap-2">
+            <i data-lucide="monitor-play" class="w-4 h-4 text-zinc-400"></i>
+            Visualizador Master
+          </h2>
+          <span id="player-format-tag" class="text-xs px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 font-mono">1:1 Quadrado</span>
+        </div>
+
+        <!-- Video Player Box -->
+        <div class="relative w-full aspect-square bg-matte-950 rounded-lg overflow-hidden border border-matte-800 flex items-center justify-center">
+          <video id="master-video" controls class="w-full h-full object-cover">
+            <source src="/static/output/palmer_1x1_resumo.mp4" type="video/mp4">
+            Seu navegador não suporta a tag de vídeo.
+          </video>
+        </div>
+
+        <!-- Video Info -->
+        <div class="text-xs text-zinc-400 space-y-1">
+          <div class="flex justify-between">
+            <span class="text-zinc-500">Resolução:</span>
+            <span class="font-mono text-zinc-300">1080 × 1080 (HD)</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-zinc-500">Duração:</span>
+            <span class="font-mono text-zinc-300">01:38 min (98.2s)</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-zinc-500">Cortes sem repetição:</span>
+            <span class="font-mono text-zinc-300">19 takes limpos</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Render Progress Monitor Card -->
+      <section id="progress-card" class="bg-matte-900 border border-matte-800 rounded-xl p-5 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Status do Motor</span>
+          <span id="progress-percent" class="text-xs font-mono font-bold text-white">Pronto</span>
+        </div>
+
+        <!-- Progress Bar Track -->
+        <div class="w-full bg-matte-950 rounded-full h-2 overflow-hidden border border-matte-800">
+          <div id="progress-bar" class="bg-white h-full transition-all duration-300" style="width: 100%;"></div>
+        </div>
+
+        <p id="progress-step-text" class="text-xs text-zinc-400">
+          Vídeo master renderizado e disponível para visualização.
+        </p>
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-matte-800 bg-matte-950 px-6 py-4 mt-auto text-xs text-zinc-500 flex items-center justify-between">
+    <span>CineShorts Studio &copy; 2026 Pierre369. Alimentado por Google Antigravity & NVIDIA CUDA.</span>
+    <span class="flex items-center gap-1.5 text-zinc-400">
+      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Sistema Operacional
+    </span>
+  </footer>
+
+  <script src="/static/app.js"></script>
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
