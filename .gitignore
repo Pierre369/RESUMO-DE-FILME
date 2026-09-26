@@ -20,6 +20,7 @@ palmer_narration*/
 palmer_master_dataset*/
 temp_*/
 app/temp_render/
+output/
 bar_transcription.txt
 
 # Root scratch and test scripts (kept in workspace, excluded from git)

@@ -44,7 +44,8 @@ os.makedirs(FILME_DIR, exist_ok=True)
 os.makedirs(EXEMPLO_DIR, exist_ok=True)
 
 # Mount statics
-app.mount("/static/output", StaticFiles(directory=OUTPUT_DIR), name="output")
+app.mount("/static/output", StaticFiles(directory=OUTPUT_DIR), name="output_static")
+app.mount("/output", StaticFiles(directory=OUTPUT_DIR), name="output_direct")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 antigravity_bridge = AntigravityBridge()
@@ -60,8 +61,9 @@ class ScreenplayRequest(BaseModel):
     character: str
     scene_description: str
     aspect_ratio: str = "1:1"
-    target_duration: int = 90
+    target_duration: int = 150
     style_id: str = "confronto_vinganca"
+    scene_id: Optional[str] = None
 
 class RenderRequest(BaseModel):
     movie_path: str
@@ -82,7 +84,9 @@ class SmartAutoRequest(BaseModel):
     movie_title: str
     style_id: str
     aspect_ratio: str = "1:1"
-    target_duration: int = 90
+    target_duration: int = 150
+    scene_id: Optional[str] = None
+    character: Optional[str] = None
 
 class AnalyzeMovieRequest(BaseModel):
     movie_title: str
@@ -276,7 +280,8 @@ async def generate_script(req: ScreenplayRequest):
         scene_description=req.scene_description,
         aspect_ratio=req.aspect_ratio,
         target_duration=req.target_duration,
-        style_id=req.style_id
+        style_id=req.style_id,
+        scene_id=req.scene_id
     )
     return result
 
@@ -288,10 +293,18 @@ async def smart_auto_generate(req: SmartAutoRequest, bg_tasks: BackgroundTasks):
     gera o roteiro e dispara o motor de renderização automaticamente.
     """
     analysis = antigravity_bridge.analyze_movie(req.movie_title)
-    main_char = next((c for c in analysis["characters"] if c.get("recommended")), analysis["characters"][0])
+    main_char = None
+    if req.character:
+        main_char = next((c for c in analysis["characters"] if c["name"].lower() == req.character.lower() or c["id"].lower() == req.character.lower()), None)
+    if not main_char:
+        main_char = next((c for c in analysis["characters"] if c.get("recommended")), analysis["characters"][0])
     
     scenes = antigravity_bridge.get_impact_scenes(req.movie_title, main_char["name"], req.style_id)
-    top_scene = scenes[0]
+    top_scene = None
+    if req.scene_id:
+        top_scene = next((s for s in scenes if s.get("id") == req.scene_id), None)
+    if not top_scene:
+        top_scene = scenes[0]
 
     screenplay = antigravity_bridge.generate_screenplay(
         movie_title=req.movie_title,
@@ -299,7 +312,8 @@ async def smart_auto_generate(req: SmartAutoRequest, bg_tasks: BackgroundTasks):
         scene_description=top_scene["summary"],
         aspect_ratio=req.aspect_ratio,
         target_duration=req.target_duration,
-        style_id=req.style_id
+        style_id=req.style_id,
+        scene_id=top_scene.get("id")
     )
 
     job_id = str(uuid.uuid4())[:8]

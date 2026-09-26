@@ -112,6 +112,14 @@ class ProjectService:
                 break
         self._save_projects(projects)
 
+    def update_project(self, project_id: str, **kwargs):
+        projects = self._load_projects()
+        for p in projects:
+            if p["id"] == project_id:
+                p.update(kwargs)
+                break
+        self._save_projects(projects)
+
     def delete_project(self, project_id: str) -> bool:
         projects = self._load_projects()
         initial_len = len(projects)

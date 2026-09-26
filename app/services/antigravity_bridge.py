@@ -354,8 +354,9 @@ class AntigravityBridge:
         character: str,
         scene_description: str,
         aspect_ratio: str = "1:1",
-        target_duration: int = 90,
-        style_id: str = "confronto_vinganca"
+        target_duration: int = 150,
+        style_id: str = "confronto_vinganca",
+        scene_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Gera roteiro completo de alta retenção no padrão brasileiro coloquial,
@@ -363,10 +364,11 @@ class AntigravityBridge:
         """
         title_lower = movie_title.lower()
         desc_lower = scene_description.lower()
+        s_id = (scene_id or "").lower()
         char_upper = character.split(" ")[0].upper()
 
         # 1. O Menu: As Palmas Mortais
-        if "palmas" in desc_lower or "morte" in desc_lower or "revelação da morte" in desc_lower or "anúncio" in desc_lower:
+        if "death" in s_id or "palmas" in desc_lower or "morte" in desc_lower or "revelação da morte" in desc_lower or "anúncio" in desc_lower:
             script_text = (
                 "[00:00 - 00:10] NARRAÇÃO (MARGOT):\n"
                 "A noite parecia só mais um jantar chique com ricaços esnobes, até que o Chef bateu uma única palma. O salão inteiro gelou.\n\n"
@@ -384,7 +386,7 @@ class AntigravityBridge:
             )
 
         # 2. O Menu: Humilhação do Tyler
-        elif "tyler" in desc_lower or "cozinha" in desc_lower or "humilhação" in desc_lower:
+        elif "tyler" in s_id or "tyler" in desc_lower or "cozinha" in desc_lower or "humilhação" in desc_lower:
             script_text = (
                 "[00:00 - 00:12] NARRAÇÃO (MARGOT):\n"
                 "O Tyler passou a noite inteira bajulando o Chef, se achando um crítico genial. Mas o ego dele desmoronou quando o Chef chamou ele pro meio da cozinha.\n\n"
@@ -444,7 +446,7 @@ class AntigravityBridge:
             )
 
         # 5. John Wick: Clube Red Circle
-        elif "red circle" in desc_lower or "boate" in desc_lower or "clube" in desc_lower:
+        elif "circle" in s_id or "red circle" in desc_lower or "boate" in desc_lower or "clube" in desc_lower:
             script_text = (
                 "[00:00 - 00:12] NARRAÇÃO (JOHN WICK):\n"
                 "Eu rastreei o Iosef até a boate mais vigiada de Manhattan. O prédio tava cercado por dezenas de capangas armados, mas nada ia me parar.\n\n"

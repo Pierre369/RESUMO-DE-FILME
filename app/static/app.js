@@ -201,13 +201,19 @@ document.addEventListener("DOMContentLoaded", () => {
           <h4 class="text-xs font-bold text-white leading-snug line-clamp-2">${p.title}</h4>
           <p class="text-[11px] text-zinc-400">Narrador: <span class="text-zinc-200">${p.character}</span></p>
         </div>
-        <div class="pt-2 border-t border-matte-800 flex items-center justify-between">
-          <span class="text-[11px] text-emerald-400 flex items-center gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Concluído (${p.cuts_count || 19} takes)
-          </span>
-          <button class="btn-play-project px-2.5 py-1 rounded bg-matte-850 hover:bg-zinc-800 text-xs font-medium text-white transition flex items-center gap-1.5"
-            data-url="${p.output_url}" data-title="${p.title}" data-aspect="${p.aspect_ratio}">
-            <i data-lucide="play" class="w-3 h-3 fill-white"></i> Assistir
+        <div class="pt-2 border-t border-matte-800 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] text-emerald-400 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Concluído (${p.cuts_count || 14} takes)
+            </span>
+            <button class="btn-play-project px-2.5 py-1 rounded bg-matte-850 hover:bg-zinc-800 text-xs font-medium text-white transition flex items-center gap-1.5"
+              data-url="${p.output_url}" data-title="${p.title}" data-aspect="${p.aspect_ratio}">
+              <i data-lucide="play" class="w-3 h-3 fill-white"></i> Assistir
+            </button>
+          </div>
+          <button class="btn-reopen-project w-full py-1.5 px-2.5 rounded bg-matte-850 hover:bg-zinc-800 text-[10px] font-medium text-zinc-300 border border-matte-800 transition flex items-center justify-center gap-1"
+            data-movie="${p.movie_title}" data-style="${p.style_id}" data-char="${p.character}" data-aspect="${p.aspect_ratio}" data-scene="${p.scene_name}">
+            <i data-lucide="clapperboard" class="w-3 h-3 text-emerald-400"></i> Gerar Nova Cena no Estúdio
           </button>
         </div>
       `;
@@ -215,6 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     attachPlayEvents();
+    attachReopenEvents();
     if (window.lucide) lucide.createIcons();
   }
 
@@ -276,6 +283,13 @@ document.addEventListener("DOMContentLoaded", () => {
               <div>Modo: <span class="text-zinc-200">${p.mode || 'Diretor'}</span></div>
             </div>
           </div>
+          <div class="px-4 pb-2">
+            <button class="btn-reopen-project w-full py-2 px-3 rounded-lg bg-matte-850 hover:bg-zinc-800 border border-matte-800 hover:border-zinc-600 text-xs font-medium text-zinc-200 transition flex items-center justify-center gap-1.5"
+              data-movie="${p.movie_title}" data-style="${p.style_id}" data-char="${p.character}" data-aspect="${p.aspect_ratio}" data-scene="${p.scene_name}">
+              <i data-lucide="clapperboard" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span>Gerar Nova Cena / Reabrir no Estúdio</span>
+            </button>
+          </div>
           <div class="p-4 pt-0 flex gap-2">
             <button class="btn-play-project flex-1 py-2 px-3 rounded-lg bg-white text-black font-semibold text-xs hover:bg-zinc-200 transition flex items-center justify-center gap-1.5"
               data-url="${p.output_url}" data-title="${p.title}" data-aspect="${p.aspect_ratio}">
@@ -295,6 +309,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       attachPlayEvents();
       attachDeleteEvents();
+      attachReopenEvents();
       if (window.lucide) lucide.createIcons();
     } catch (e) {
       console.error(e);
@@ -342,6 +357,44 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error(err);
           }
         }
+      };
+    });
+  }
+
+  function attachReopenEvents() {
+    document.querySelectorAll(".btn-reopen-project").forEach(b => {
+      b.onclick = async (e) => {
+        const btn = e.currentTarget;
+        const movieTitle = btn.getAttribute("data-movie");
+        const styleId = btn.getAttribute("data-style");
+        const charName = btn.getAttribute("data-char");
+        const aspect = btn.getAttribute("data-aspect") || "1:1";
+        const sceneName = btn.getAttribute("data-scene");
+
+        switchView("creator", `Estúdio: ${movieTitle}`);
+
+        // 1. Seleciona o filme correspondente
+        for (let i = 0; i < creatorMovieSelect.options.length; i++) {
+          const opt = creatorMovieSelect.options[i];
+          if (opt.dataset.filename === movieTitle || opt.value.includes(movieTitle)) {
+            creatorMovieSelect.selectedIndex = i;
+            break;
+          }
+        }
+
+        // 2. Seleciona o modelo de estilo
+        if (styleId) {
+          creatorStyleSelect.value = styleId;
+          const evt = new Event("change");
+          creatorStyleSelect.dispatchEvent(evt);
+        }
+
+        // 3. Seleciona a proporção
+        const radio = document.querySelector(`input[name="creator-aspect-ratio"][value="${aspect}"]`);
+        if (radio) radio.checked = true;
+
+        // 4. Carrega instantaneamente os personagens e cenas deste filme
+        await autoLoadMovieScenes(movieTitle, charName, sceneName);
       };
     });
   }
@@ -440,13 +493,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // CREATOR WORKFLOW (NOVO PROJETO)
   // ========================================================
   function resetCreatorUI() {
-    guidedFlowContainer.classList.add("hidden");
     screenplayReviewBox.classList.add("hidden");
     creatorRenderMonitor.classList.add("hidden");
     monitorPlayerBox.classList.add("hidden");
     customSceneInput.value = "";
-    selectedCharacter = null;
-    selectedScene = null;
   }
 
   async function loadCreatorDropdowns() {
@@ -496,12 +546,17 @@ document.addEventListener("DOMContentLoaded", () => {
       creatorStyleSelect.onchange = updateStyleInfoBox;
       updateStyleInfoBox();
 
-      // Auto update if movie changes while guided flow is visible
+      // Carrega imediatamente as cenas e personagens do filme escolhido
       creatorMovieSelect.onchange = () => {
-        if (!guidedFlowContainer.classList.contains("hidden")) {
-          btnTriggerGuidedMode.click();
-        }
+        const movieTitle = creatorMovieSelect.selectedOptions[0]?.dataset.filename || creatorMovieSelect.value;
+        autoLoadMovieScenes(movieTitle);
       };
+
+      const initialMovieTitle = creatorMovieSelect.selectedOptions[0]?.dataset.filename || allMovies[0]?.filename;
+      if (initialMovieTitle) {
+        autoLoadMovieScenes(initialMovieTitle);
+      }
+
     } catch (e) {
       console.error(e);
     }
@@ -544,6 +599,7 @@ document.addEventListener("DOMContentLoaded", () => {
         opt.selected = true;
         creatorMovieSelect.appendChild(opt);
         setTimeout(() => movieUploadProgress.classList.add("hidden"), 3000);
+        autoLoadMovieScenes(res.filename);
       } else {
         uploadFilename.innerText = "Erro ao enviar arquivo.";
       }
@@ -577,13 +633,15 @@ document.addEventListener("DOMContentLoaded", () => {
           movie_title: movieTitle,
           style_id: styleId,
           aspect_ratio: aspect,
-          target_duration: 90
+          target_duration: 150,
+          scene_id: selectedScene?.id || null,
+          character: selectedCharacter || null
         })
       });
 
       const data = await res.json();
       btnTriggerSmartAuto.disabled = false;
-      btnTriggerSmartAuto.innerHTML = `<i data-lucide="play" class="w-3.5 h-3.5 fill-black"></i> GERAR NO AUTOMÁTICO`;
+      btnTriggerSmartAuto.innerHTML = `<i data-lucide="play" class="w-3.5 h-3.5 fill-black"></i> GERAR NO AUTOMÁTICO (2 A 3 MIN)`;
       if (window.lucide) lucide.createIcons();
 
       // Show Render Monitor
@@ -599,13 +657,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // --------------------------------------------------------
   // MODO DIRETOR GUIADO
   // --------------------------------------------------------
-  btnTriggerGuidedMode.addEventListener("click", async () => {
-    const movieTitle = creatorMovieSelect.selectedOptions[0]?.dataset.filename || "Palmer";
-    btnTriggerGuidedMode.disabled = true;
-    btnTriggerGuidedMode.innerHTML = `<span class="animate-spin mr-1">⏳</span> Antigravity analisando filme...`;
-
+  async function autoLoadMovieScenes(movieTitle, preselectedChar = null, preselectedSceneNameOrId = null) {
     try {
-      // 1. Analyze Movie for Characters
+      // 1. Analisa filme e personagens
       const res = await fetch("/api/antigravity/analyze-movie", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -615,11 +669,35 @@ document.addEventListener("DOMContentLoaded", () => {
       currentCharacters = data.characters || [];
       renderCharactersList(currentCharacters);
 
-      // 2. Fetch Impact Scenes for Default Character
-      const defaultChar = currentCharacters.find(c => c.recommended) || currentCharacters[0];
-      selectedCharacter = defaultChar?.name || "Eddie Palmer";
-      await fetchImpactScenes(movieTitle, selectedCharacter);
+      if (preselectedChar) {
+        selectedCharacter = preselectedChar;
+      } else {
+        const defaultChar = currentCharacters.find(c => c.recommended) || currentCharacters[0];
+        selectedCharacter = defaultChar?.name || "Protagonista";
+      }
 
+      // Marca o radio do personagem selecionado
+      document.querySelectorAll('input[name="guided-character"]').forEach(rad => {
+        if (rad.value.toLowerCase().includes(selectedCharacter.toLowerCase()) || selectedCharacter.toLowerCase().includes(rad.value.toLowerCase())) {
+          rad.checked = true;
+        }
+      });
+
+      // 2. Busca cenas de impacto para esse personagem
+      await fetchImpactScenes(movieTitle, selectedCharacter, preselectedSceneNameOrId);
+      guidedFlowContainer.classList.remove("hidden");
+    } catch (e) {
+      console.error("Erro ao carregar cenas do filme:", e);
+    }
+  }
+
+  btnTriggerGuidedMode.addEventListener("click", async () => {
+    const movieTitle = creatorMovieSelect.selectedOptions[0]?.dataset.filename || "Palmer";
+    btnTriggerGuidedMode.disabled = true;
+    btnTriggerGuidedMode.innerHTML = `<span class="animate-spin mr-1">⏳</span> Antigravity analisando filme...`;
+
+    try {
+      await autoLoadMovieScenes(movieTitle);
       guidedFlowContainer.classList.remove("hidden");
       btnTriggerGuidedMode.disabled = false;
       btnTriggerGuidedMode.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i> Filme Analisado!`;
@@ -660,7 +738,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  async function fetchImpactScenes(movieTitle, characterName) {
+  async function fetchImpactScenes(movieTitle, characterName, preselectedSceneNameOrId = null) {
     const styleId = creatorStyleSelect.value || "confronto_vinganca";
     try {
       const res = await fetch("/api/antigravity/impact-scenes", {
@@ -674,19 +752,27 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       const data = await res.json();
       currentImpactScenes = data.scenes || [];
-      renderImpactScenes(currentImpactScenes);
+      renderImpactScenes(currentImpactScenes, preselectedSceneNameOrId);
     } catch (e) {
       console.error(e);
     }
   }
 
-  function renderImpactScenes(scenes) {
+  function renderImpactScenes(scenes, preselectedSceneNameOrId = null) {
     impactScenesList.innerHTML = "";
     scenes.forEach((s, idx) => {
+      let isChecked = false;
+      if (preselectedSceneNameOrId) {
+        const target = preselectedSceneNameOrId.toLowerCase();
+        isChecked = s.id.toLowerCase() === target || s.title.toLowerCase().includes(target) || target.includes(s.title.toLowerCase());
+      } else {
+        isChecked = (idx === 0);
+      }
+
       const card = document.createElement("label");
-      card.className = `p-4 border rounded-xl cursor-pointer transition flex items-start gap-3 bg-matte-850/60 hover:border-zinc-500 ${idx === 0 ? 'border-white bg-matte-850' : 'border-matte-800'}`;
+      card.className = `p-4 border rounded-xl cursor-pointer transition flex items-start gap-3 bg-matte-850/60 hover:border-zinc-500 ${isChecked ? 'border-white bg-matte-850' : 'border-matte-800'}`;
       card.innerHTML = `
-        <input type="radio" name="guided-scene" value="${s.id}" ${idx === 0 ? 'checked' : ''} class="mt-1">
+        <input type="radio" name="guided-scene" value="${s.id}" ${isChecked ? 'checked' : ''} class="mt-1">
         <div class="space-y-1.5 flex-1">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-white">${s.title}</span>
@@ -699,7 +785,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         </div>
       `;
-      if (idx === 0) selectedScene = s;
+      if (isChecked) selectedScene = s;
       card.querySelector("input").addEventListener("change", () => {
         selectedScene = s;
         // Atualiza a visualização do card ativo
@@ -709,16 +795,10 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         card.classList.add("border-white", "bg-matte-850");
         card.classList.remove("border-matte-800");
-        // Gera automaticamente o roteiro específico para essa cena escolhida
-        btnGenerateScreenplayGuided.click();
       });
       impactScenesList.appendChild(card);
     });
     if (window.lucide) lucide.createIcons();
-    // Gera o roteiro inicial para a primeira cena recomendada
-    if (scenes.length > 0) {
-      btnGenerateScreenplayGuided.click();
-    }
   }
 
   // Generate Screenplay in Guided Mode
@@ -741,8 +821,9 @@ document.addEventListener("DOMContentLoaded", () => {
           character: selectedCharacter || "Protagonista",
           scene_description: sceneDesc,
           aspect_ratio: aspect,
-          target_duration: 90,
-          style_id: styleId
+          target_duration: 150,
+          style_id: styleId,
+          scene_id: selectedScene?.id || null
         })
       });
       const data = await res.json();
@@ -834,8 +915,8 @@ document.addEventListener("DOMContentLoaded", () => {
           monitorStepText.innerText = "Vídeo master gerado e finalizado com sucesso!";
           monitorPlayerBox.classList.remove("hidden");
 
-          const rawUrl = data.output_url || `/static/output/${outputFilename || 'palmer_1x1_resumo.mp4'}`;
-          const videoUrl = `${rawUrl}?t=${Date.now()}`;
+          const rawUrl = data.output_url || (outputFilename ? `/static/output/${outputFilename}` : '');
+          const videoUrl = rawUrl ? `${rawUrl}?t=${Date.now()}` : '';
           monitorVideo.src = videoUrl;
           btnDownloadVideo.href = rawUrl;
 
