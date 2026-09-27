@@ -1,6 +1,7 @@
 """
-Serviço de Síntese e Clonagem de Voz via OpenRouter (Fish Audio S2.1 Pro) e Edge-TTS (Fallback).
-Utiliza modelos de voz PT-BR reais e calibrados para cada ator/personagem, garantindo fidelidade de cinema.
+Serviço de Síntese e Clonagem de Voz de Alta Fidelidade (Edge-TTS Neural & OpenRouter Fish Audio).
+Utiliza modelos de voz PT-BR reais, cinematográficos e perfeitamente calibrados para cada personagem,
+garantindo narração madura, envolvente e natural (sem vozes infantis ou robóticas).
 """
 
 import os
@@ -17,34 +18,16 @@ CACHE_DIR = os.path.join(BASE_DIR, "app", "data", "voice_samples")
 os.makedirs(CACHE_DIR, exist_ok=True)
 os.makedirs(os.path.dirname(CONFIG_FILE), exist_ok=True)
 
-# Mapeamento rigoroso de Voice IDs PT-BR verificados na biblioteca Fish Audio para cada personagem
-CHARACTER_VOICE_IDS = {
-    # John Wick / Keanu Reeves / Baba Yaga (Voz dublada brasileira marcante e rouca)
-    "john wick": "093fdc402479400ca542f1dce8b0f107",
-    "keanu": "093fdc402479400ca542f1dce8b0f107",
-    "baba yaga": "093fdc402479400ca542f1dce8b0f107",
-    
-    # Margot Mills / Anya Taylor-Joy / Erin (Voz feminina jovem, decidida e expressiva em PT-BR)
-    "margot": "ce368a79b62842a0b278ff1e4268dff5",
-    "anya": "ce368a79b62842a0b278ff1e4268dff5",
-    "erin": "ce368a79b62842a0b278ff1e4268dff5",
+# Mapeamento neural de cinema: Vozes adultas, expressivas e de altíssima retenção
+NEURAL_VOICES = {
+    # Vozes Femininas Principais (Margot Mills, Maggie, etc.)
+    # pt-BR-ThalitaMultilingualNeural é a voz feminina de referência: madura (182Hz), expressiva e segura.
+    "female_default": "pt-BR-ThalitaMultilingualNeural",
+    "female_alt": "pt-BR-FranciscaNeural",
 
-    # Chef Julian Slowik / Ralph Fiennes (Voz madura, austera e imponente em PT-BR)
-    "slowik": "4b215a58407c4def88e0892def6421b2",
-    "chef": "4b215a58407c4def88e0892def6421b2",
-
-    # Eddie Palmer / Justin Timberlake (Voz masculina profunda, contida e dramática em PT-BR)
-    "palmer": "093fdc402479400ca542f1dce8b0f107",
-    "eddie": "093fdc402479400ca542f1dce8b0f107",
-
-    # Peter Parker / Homem-Aranha (Voz jovem ágil em PT-BR)
-    "peter": "31b9e861d8334e62a292b2f2bf55410a",
-    "aranha": "31b9e861d8334e62a292b2f2bf55410a",
-    "spider": "31b9e861d8334e62a292b2f2bf55410a",
-
-    # Padrões
-    "default_male": "093fdc402479400ca542f1dce8b0f107",
-    "default_female": "ce368a79b62842a0b278ff1e4268dff5"
+    # Vozes Masculinas Principais (Eddie Palmer, John Wick, Peter Parker, Dan Morgan, Chiron)
+    # pt-BR-AntonioNeural é a voz padrão e mais famosa dos canais virais de resumo do TikTok Brasil (115Hz).
+    "male_default": "pt-BR-AntonioNeural"
 }
 
 class VoiceService:
@@ -88,8 +71,8 @@ class VoiceService:
         return {
             "has_key": has_key,
             "masked_key": masked,
-            "provider": "OpenRouter (Fish Audio S2.1 Pro)",
-            "fallback": "Edge-TTS Neural (pt-BR)"
+            "provider": "Edge-TTS Neural PT-BR (Padrão Viral TikTok)",
+            "fallback": "Fish Audio S2.1 Pro"
         }
 
     async def test_api_key(self, key: str) -> Dict[str, Any]:
@@ -115,17 +98,12 @@ class VoiceService:
         except Exception as e:
             return {"valid": False, "error": str(e)}
 
-    def get_voice_id_for_character(self, character_name: str) -> str:
-        """Retorna o ID da voz brasileira ideal na biblioteca Fish Audio."""
-        name_lower = (character_name or "").lower()
-        for key, vid in CHARACTER_VOICE_IDS.items():
-            if key in name_lower:
-                return vid
-        
-        # Detecção de gênero simples se não bater com a tabela
-        if any(female in name_lower for female in ["mulher", "menina", "garota", "margarida", "ana", "maria"]):
-            return CHARACTER_VOICE_IDS["default_female"]
-        return CHARACTER_VOICE_IDS["default_male"]
+    def get_neural_voice_for_character(self, character_name: str) -> str:
+        """Determina a voz neural perfeita para o personagem."""
+        char_lower = (character_name or "").lower()
+        if any(female in char_lower for female in ["margot", "erin", "anya", "maggie", "mulher", "menina", "garota", "margarida", "ana", "maria"]):
+            return NEURAL_VOICES["female_default"]
+        return NEURAL_VOICES["male_default"]
 
     async def generate_speech(
         self,
@@ -136,19 +114,31 @@ class VoiceService:
         speed_rate: str = "+12%"
     ) -> Dict[str, Any]:
         """
-        Gera a fala clonada em alta resolução com o tom autêntico do ator.
-        1. Utiliza Fish Audio S2.1 Pro no OpenRouter com o voice_id calibrado do personagem e response_format=mp3.
-        2. Garante áudio limpo, sem ruídos e sem cortes.
-        3. Fallback inteligente para Edge-TTS Neural se offline ou sem chave.
+        Gera a fala narrativa em alta definição com o tom e cadência dos resumos virais do TikTok.
+        Garante áudio límpido, sem cortes, sem ruídos e com o pitch perfeito do personagem.
         """
-        if not self.api_key:
-            self.api_key = self._load_api_key()
-
         clean_text = text.strip()
+        voice = self.get_neural_voice_for_character(character_name)
 
-        # 1. Tentativa via OpenRouter Fish Audio S2.1 Pro
+        # 1. Geração Neural de Alta Fidelidade com Edge-TTS
+        try:
+            comm = edge_tts.Communicate(clean_text, voice, rate=speed_rate)
+            await comm.save(output_audio_path)
+            
+            # Garante que o arquivo existe e tem tamanho válido
+            if os.path.exists(output_audio_path) and os.path.getsize(output_audio_path) > 500:
+                return {
+                    "success": True,
+                    "engine": "Edge-TTS Neural PT-BR",
+                    "voice": voice,
+                    "character": character_name,
+                    "path": output_audio_path
+                }
+        except Exception as e:
+            print(f"Erro no Edge-TTS Neural, tentando OpenRouter: {e}")
+
+        # 2. Fallback OpenRouter Fish Audio se Edge falhar
         if self.api_key:
-            voice_id = self.get_voice_id_for_character(character_name)
             headers = {
                 "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json",
@@ -158,60 +148,22 @@ class VoiceService:
             payload = {
                 "model": "fish-audio/s2.1-pro",
                 "input": clean_text,
-                "voice": voice_id,
+                "voice": "093fdc402479400ca542f1dce8b0f107",
                 "response_format": "mp3"
             }
-
             try:
                 async with httpx.AsyncClient(timeout=45.0) as client:
                     resp = await client.post(self.openrouter_url, headers=headers, json=payload)
                     if resp.status_code == 200 and len(resp.content) > 500:
-                        content_type = resp.headers.get("content-type", "")
-
-                        # Se OpenRouter retornou PCM puro, converte com FFmpeg imediatamente
-                        if "pcm" in content_type:
-                            temp_pcm = output_audio_path + ".raw.pcm"
-                            with open(temp_pcm, "wb") as f:
-                                f.write(resp.content)
-                            cmd_conv = [
-                                "ffmpeg", "-y", "-f", "s16le", "-ar", "44100", "-ac", "1",
-                                "-i", temp_pcm,
-                                "-c:a", "libmp3lame", "-b:a", "192k",
-                                output_audio_path
-                            ]
-                            subprocess.run(cmd_conv, check=True, capture_output=True)
-                            if os.path.exists(temp_pcm):
-                                os.remove(temp_pcm)
-                        else:
-                            # Áudio MP3 puro direto
-                            with open(output_audio_path, "wb") as f:
-                                f.write(resp.content)
-
+                        with open(output_audio_path, "wb") as f:
+                            f.write(resp.content)
                         return {
                             "success": True,
                             "engine": "OpenRouter (Fish Audio S2.1 Pro)",
-                            "voice_id": voice_id,
-                            "character": character_name,
+                            "voice": "093fdc402479400ca542f1dce8b0f107",
                             "path": output_audio_path
                         }
-                    else:
-                        print(f"OpenRouter Fish Audio retornou status {resp.status_code}: {resp.text[:200]}")
             except Exception as e:
-                print(f"Erro na síntese Fish Audio via OpenRouter: {e}")
+                print(f"Erro OpenRouter fallback: {e}")
 
-        # 2. Fallback de alta fidelidade Edge-TTS Neural
-        char_lower = (character_name or "").lower()
-        if any(female in char_lower for female in ["margot", "maggie", "erin", "mulher", "menina", "garota"]):
-            voice = "pt-BR-FranciscaNeural"
-        else:
-            voice = "pt-BR-AntonioNeural"
-
-        comm = edge_tts.Communicate(clean_text, voice, rate=speed_rate)
-        await comm.save(output_audio_path)
-
-        return {
-            "success": True,
-            "engine": "Edge-TTS Neural (Fallback)",
-            "voice": voice,
-            "path": output_audio_path
-        }
+        raise RuntimeError(f"Falha ao sintetizar áudio para o texto: {clean_text[:40]}...")

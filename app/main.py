@@ -304,7 +304,18 @@ async def smart_auto_generate(req: SmartAutoRequest, bg_tasks: BackgroundTasks):
     if req.scene_id:
         top_scene = next((s for s in scenes if s.get("id") == req.scene_id), None)
     if not top_scene:
-        top_scene = scenes[0]
+        # Verifica quais cenas deste filme já foram geradas em projetos anteriores para rotacionar
+        past_projects = project_service.list_projects()
+        used_scene_titles = {
+            p.get("scene_name", "").lower() 
+            for p in past_projects 
+            if p.get("movie_title", "").lower() == req.movie_title.lower() and p.get("status") == "completed"
+        }
+        available_scenes = [s for s in scenes if s.get("title", "").lower() not in used_scene_titles]
+        if available_scenes:
+            top_scene = available_scenes[0]
+        else:
+            top_scene = scenes[0]
 
     screenplay = antigravity_bridge.generate_screenplay(
         movie_title=req.movie_title,

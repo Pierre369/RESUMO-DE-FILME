@@ -786,16 +786,19 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       `;
       if (isChecked) selectedScene = s;
-      card.querySelector("input").addEventListener("change", () => {
+      const selectThisScene = () => {
         selectedScene = s;
-        // Atualiza a visualização do card ativo
+        const rad = card.querySelector("input");
+        if (rad) rad.checked = true;
         document.querySelectorAll("#impact-scenes-list label").forEach(lbl => {
           lbl.classList.remove("border-white", "bg-matte-850");
           lbl.classList.add("border-matte-800");
         });
         card.classList.add("border-white", "bg-matte-850");
         card.classList.remove("border-matte-800");
-      });
+      };
+      card.addEventListener("click", selectThisScene);
+      card.querySelector("input").addEventListener("change", selectThisScene);
       impactScenesList.appendChild(card);
     });
     if (window.lucide) lucide.createIcons();

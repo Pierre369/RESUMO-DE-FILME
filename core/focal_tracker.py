@@ -1,12 +1,14 @@
 """
-Módulo de Rastreamento de Foco e Cálculo Matemático de Enquadramento (9:16 e 1:1).
-Combina Visão Computacional (Detecção Facial com OpenCV) e cálculo geométrico estrito
-para garantir que o rosto e a ação do personagem estejam SEMPRE perfeitamente centralizados,
-sem cortar queixos, olhos ou laterais, e sem distorção anamórfica.
+Módulo de Rastreamento de Foco e Cálculo Matemático de Enquadramento (1:1 e 9:16).
+Utiliza Rede Neural Profunda (OpenCV YuNet ONNX) e Visão Computacional de ponta
+para garantir que o rosto dos atores e o centro dramático da cena estejam SEMPRE
+perfeitamente enquadrados, sem cortar queixos, olhos ou ações, reproduzindo
+o corte milimétrico dos vídeos de referência do TikTok.
 """
 
+import os
 import subprocess
-from typing import Literal, Optional
+from typing import Literal, Optional, List, Tuple
 import numpy as np
 
 try:
@@ -15,12 +17,34 @@ try:
 except ImportError:
     HAS_CV2 = False
 
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+YUNET_MODEL_PATH = os.path.join(CURRENT_DIR, "face_detection_yunet_2023mar.onnx")
 
 class FocalTracker:
     """
-    Rastreia o ponto de atenção do vídeo e calcula a janela de recorte vertical (1080x1920) 
-    ou quadrada (1080x1080) centralizando rigorosamente o personagem no espaço real do vídeo.
+    Rastreia o ponto de atenção do vídeo e calcula a janela de recorte quadrada (1080x1080)
+    ou vertical (1080x1920) centralizando os atores no espaço real do vídeo.
     """
+
+    _yunet_detector = None
+
+    @classmethod
+    def get_yunet_detector(cls):
+        if not HAS_CV2 or not os.path.exists(YUNET_MODEL_PATH):
+            return None
+        if cls._yunet_detector is None:
+            try:
+                cls._yunet_detector = cv2.FaceDetectorYN.create(
+                    model=YUNET_MODEL_PATH,
+                    config="",
+                    input_size=(640, 360),
+                    score_threshold=0.3,
+                    nms_threshold=0.3,
+                    top_k=5000
+                )
+            except Exception:
+                cls._yunet_detector = None
+        return cls._yunet_detector
 
     @staticmethod
     def detect_optimal_target_x(
@@ -31,23 +55,21 @@ class FocalTracker:
         fallback_x: Optional[float] = None
     ) -> float:
         """
-        Analisa o frame do vídeo na posição do take usando Visão Computacional (OpenCV).
-        Testa múltiplos offsets temporais (0.0s, 0.5s, 1.0s) para garantir detecção facial precisa
-        mesmo em cenas em movimento ou cortes de câmera.
-        Se encontrar o rosto do personagem, retorna o centro X exato do rosto.
-        Se for plano geral de objeto ou paisagem, usa o fallback_x calibrado ou o centro do filme.
+        Analisa o frame do vídeo na posição do take usando Visão Computacional Neural (YuNet).
+        Varre múltiplos offsets temporais (0.0s, 0.5s, 1.0s, 1.5s) para capturar o enquadramento
+        dos personagens mesmo em cenas de corte rápido ou iluminação desafiadora.
         """
         default_x = fallback_x if fallback_x is not None else (orig_w / 2.0)
 
         if not HAS_CV2:
             return default_x
 
-        try:
-            cascade_front = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-            cascade_prof = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_profileface.xml')
+        detector = FocalTracker.get_yunet_detector()
+        cascade_front = None
+        cascade_prof = None
 
-            # Varre 3 micro-pontos no início da cena (0.0s, 0.5s, 1.0s) para capturar o rosto
-            for offset in [0.0, 0.5, 1.0]:
+        for offset in [0.0, 0.5, 1.0, 1.5]:
+            try:
                 cmd = [
                     "ffmpeg", "-ss", str(start_ts), "-i", movie_path,
                     "-ss", str(offset), "-vframes", "1",
@@ -62,35 +84,61 @@ class FocalTracker:
                 if img is None:
                     continue
 
+                ih, iw = img.shape[:2]
+
+                # 1. Tentativa com Rede Neural YuNet (Extremamente Precisa)
+                if detector is not None:
+                    detector.setInputSize((iw, ih))
+                    _, faces = detector.detect(img)
+                    if faces is not None and len(faces) > 0:
+                        detected_centers = []
+                        for f in faces:
+                            fx, fy, fw, fh = f[:4]
+                            conf = f[-1]
+                            if fw >= 30 and fh >= 30:  # Ignora ruídos minúsculos
+                                detected_centers.append((fx + (fw / 2.0), fw * fh, conf))
+
+                        if detected_centers:
+                            # Se há múltiplos atores em cena (ex: diálogo/embate),
+                            # enquadra de forma a englobar os dois principais
+                            if len(detected_centers) >= 2:
+                                # Ordena pelos maiores rostos (primeiro plano)
+                                detected_centers.sort(key=lambda item: item[1], reverse=True)
+                                c1 = detected_centers[0][0]
+                                c2 = detected_centers[1][0]
+                                # Se a distância entre eles couber no crop
+                                crop_limit = min(orig_w, orig_h) * 0.85
+                                if abs(c1 - c2) <= crop_limit:
+                                    return (c1 + c2) / 2.0
+
+                            if fallback_x is not None:
+                                best = min(detected_centers, key=lambda item: abs(item[0] - fallback_x))
+                                return best[0]
+                            else:
+                                best = max(detected_centers, key=lambda item: item[1])
+                                return best[0]
+
+                # 2. Fallback Haar Cascades (se YuNet não detectar)
+                if cascade_front is None:
+                    cascade_front = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+                    cascade_prof = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_profileface.xml')
+
                 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                haar_faces = cascade_front.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3, minSize=(40, 40))
+                if len(haar_faces) == 0:
+                    haar_faces = cascade_prof.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3, minSize=(40, 40))
 
-                # 1. Detector Frontal
-                faces = cascade_front.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3, minSize=(50, 50))
+                if len(haar_faces) > 0:
+                    centers = [f[0] + (f[2] / 2.0) for f in haar_faces if f[2] >= 40]
+                    if centers:
+                        if fallback_x is not None:
+                            best = min(centers, key=lambda c: abs(c - fallback_x))
+                            return best
+                        else:
+                            return centers[0]
 
-                # 2. Detector de Perfil (se frontal não achar)
-                if len(faces) == 0:
-                    faces = cascade_prof.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3, minSize=(50, 50))
-
-                if len(faces) > 0:
-                    if fallback_x is not None:
-                        # Filtra apenas faces próximas do personagem de interesse (<= 250px do fallback)
-                        # e com dimensões de primeiro plano (evita ruídos no fundo do cenário)
-                        valid_faces = [
-                            f for f in faces
-                            if abs((f[0] + (f[2] / 2.0)) - fallback_x) <= 250 and f[2] >= 60 and f[3] >= 60
-                        ]
-                        if valid_faces:
-                            best_face = min(valid_faces, key=lambda f: abs((f[0] + (f[2] / 2.0)) - fallback_x))
-                            fx, fy, fw, fh = best_face
-                            return fx + (fw / 2.0)
-                    else:
-                        best_face = max(faces, key=lambda f: f[2] * f[3])
-                        fx, fy, fw, fh = best_face
-                        return fx + (fw / 2.0)
-
-        except Exception as e:
-            # Em caso de qualquer falha rápida, preserva o fallback
-            pass
+            except Exception:
+                pass
 
         return default_x
 
